@@ -13,3 +13,4 @@ logs/err.log
 venv/
 *.pem
 nohup*
+.env
