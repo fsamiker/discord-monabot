@@ -1,0 +1,15 @@
+# Python Files
+__pycache__
+.pylintrc
+.pytest_cache
+*.pyc
+
+# IDE
+.vscode/
+
+# Dev Files
+example/
+logs/err.log
+venv/
+*.pem
+nohup*
