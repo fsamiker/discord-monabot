@@ -2,30 +2,38 @@ from datetime import datetime, time
 from datetime import timedelta
 from discord.ext import commands
 import asyncio
+import json
+import pytz
 
 class Reminder:
     
-    def __init__(self, _id, ctx, when, message, owner, r_type):
+    def __init__(self, _id, ctx, when, message, owner, r_type, timezone='UTC'):
         self._id = _id
         self.ctx = ctx
         self.when = when
         self.message = message
         self.owner = owner
         self.r_type = r_type
-        self.when_str = when.strftime("%d %b %Y, %H:%M")
+        self.tz = timezone
 
     @property
     def display_name(self):
-        return f'{self.r_type} - {self.when_str} [#ID{self._id}]'
+        return f'{self.r_type} - {self.get_display_time()} [#ID{self._id}]'
 
     def update_time(self, when):
         self.when = when
-        self.when_str = when.strftime("%d %b %Y, %H:%M")
+
+    def get_display_time(self):
+        user_tz = pytz.timezone(self.tz)
+        utc_tz = pytz.timezone('UTC')
+        display_time = utc_tz.localize(self.when).astimezone(user_tz)
+        return display_time.strftime("%d %b %Y, %H:%M %z")
 
 class Reminders(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.tz = self._load_timezones()
         self._reminder_list = []
         self._enable_reminders = True
         self.counter = 0
@@ -36,9 +44,14 @@ class Reminders(commands.Cog):
         loop = asyncio.get_event_loop()
         loop.create_task(self.reminder_processor())
 
+    def _load_timezones(self):
+        with open('data/discord_timezones.json', 'r') as f:
+            data = json.load(f)
+        return data
+
     async def reminder_processor(self):
         while self._enable_reminders:
-            now = datetime.now()
+            now = datetime.utcnow()
             for i in range(len(self._reminder_list)):
                 r = self._reminder_list[0]
                 if r.when > now:
@@ -73,6 +86,15 @@ class Reminders(commands.Cog):
     def delete_reminder(self, index):
         self._reminder_list.pop(index)
 
+    def timezone_convertor(self, discord_region):
+        if discord_region.lower() in self.tz.keys():
+            return self.tz[discord_region]
+        return 'UTC'
+
+    def reminder_exists(self, owner, r_type):
+        user_reminders = self.get_all_reminders(owner)
+        duplicates = [r for r in user_reminders if r.r_type.lower() == r_type.lower()]
+        return bool(duplicates)
 
     @commands.command()
     async def remindme(self, ctx, *args):
@@ -82,15 +104,21 @@ class Reminders(commands.Cog):
         if args[0].lower() == 'resin':
             resin_cog = self.bot.get_cog('Resin')
             if resin_cog is not None:
+
+                if self.reminder_exists(ctx.author, 'Resin'):
+                    await ctx.send(f'Resin Reminder already exists. You can adjust resin reminder with "setresin" command.')
+                    return
                 error = resin_cog.verify_resin(args[1])
                 if error is not None:
                     await ctx.send(f'{error}')
                     return
+
                 current_resin = int(args[1])
                 resin_cog.set_current_resin(member_id, current_resin)
-                current_time = datetime.now()
+                current_time = datetime.utcnow()
                 max_resin_time = resin_cog.get_max_resin_time(current_time, current_resin)
-                r = Reminder(self.counter, ctx, max_resin_time, f'<@{member_id}> your resin is full!', ctx.author, 'Resin')
+                timezone = self.timezone_convertor(ctx.guild.region.name)
+                r = Reminder(self.counter, ctx, max_resin_time, f'<@{member_id}> your resin is full!', ctx.author, 'Resin', timezone)
                 self.add_reminder(r)
                 await ctx.send(f'Reminder set. {r.display_name}')
             else:

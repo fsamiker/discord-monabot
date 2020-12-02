@@ -21,7 +21,7 @@ class Resin(commands.Cog):
             resin_details = self._resin_list[member_id]
             time = resin_details['time']
             set_resin = resin_details['resin']
-            resin_added = (datetime.now() - time).seconds/(8*60)
+            resin_added = (datetime.utcnow() - time).seconds/(8*60)
             if (set_resin + resin_added) > 160:
                 max_resin_time = self.get_max_resin_time(time, set_resin)
                 await ctx.send(f"{member_name}'s' resin filled up to full at " + max_resin_time.strftime("%d %b %Y, %H:%M"))
@@ -43,21 +43,22 @@ class Resin(commands.Cog):
         reminders = self.bot.get_cog('Reminders')
         resin_reminder = [r for r in reminders.get_all_reminders(ctx.author) if r.r_type == 'Resin']
         if resin_reminder:
-            new_max_time = self.get_max_resin_time(datetime.now(), resin)
-            resin_reminder[0].update_time(new_max_time)
+            new_max_time = self.get_max_resin_time(datetime.utcnow(), resin)
+            r = resin_reminder[0]
+            r.update_time(new_max_time)
+            additional_msg = ' Resin reminder found, readjusted to '+ r.get_display_time()
             reminders.sort_reminders()
-            additional_msg = ' Resin reminder found, readjusted to '+ new_max_time.strftime("%d %b %Y, %H:%M")
         await ctx.send(f'Resin value set to {resin}.{additional_msg}')
 
 
     def set_current_resin(self, member_id, current_resin: int):
         self._resin_list[member_id] = {
             'resin': current_resin,
-            'time': datetime.now()
+            'time': datetime.utcnow()
             }
 
     def get_current_resin(self, time, resin: int):
-        resin_since = (datetime.now() - time).seconds/(self.resin_rate*60)
+        resin_since = (datetime.utcnow() - time).seconds/(self.resin_rate*60)
         return resin+resin_since
 
     def clear_resin(self, member_id):
