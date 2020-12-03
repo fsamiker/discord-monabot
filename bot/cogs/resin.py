@@ -1,6 +1,7 @@
 import discord
 from datetime import datetime, timedelta
 from discord.ext import commands
+import pytz
 
 class Resin(commands.Cog):
 
@@ -11,7 +12,7 @@ class Resin(commands.Cog):
         self._resin_list = {}
 
     @commands.command()
-    async def currentresin(self, ctx, *, member: discord.Member=None):
+    async def checkresin(self, ctx, *, member: discord.Member=None):
         """Shows current resin value. Blank for self or Tag a user"""
         if member is None:
             member = ctx.message.author
@@ -23,8 +24,11 @@ class Resin(commands.Cog):
             set_resin = resin_details['resin']
             resin_added = (datetime.utcnow() - time).seconds/(8*60)
             if (set_resin + resin_added) > 160:
-                max_resin_time = self.get_max_resin_time(time, set_resin)
-                await ctx.send(f"{member_name}'s' resin filled up to full at " + max_resin_time.strftime("%d %b %Y, %H:%M"))
+                reminder_cog = self.bot.get_cog('Reminders')
+                user_tz = pytz.timezone(reminder_cog.timezone_convertor(ctx.guild.region.name))
+                utc_tz = pytz.timezone('UTC')
+                max_resin_time = utc_tz.localize(self.get_max_resin_time(time, set_resin)).astimezone(user_tz)
+                await ctx.send(f"{member_name}'s' resin filled up to full at " + max_resin_time.strftime("%d %b %Y, %H:%M %z"))
             else:
                 current_resin = int(round(self.get_current_resin(time, set_resin)))
                 await ctx.send(f'{member_name} currently has {current_resin} resin')
