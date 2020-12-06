@@ -14,3 +14,6 @@ venv/
 *.pem
 nohup*
 *.env
+
+# Asset Files
+assets/genshin/recipe
