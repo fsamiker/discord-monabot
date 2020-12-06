@@ -1,3 +1,4 @@
+from discord import activity
 from discord.ext import commands
 import discord
 
@@ -9,6 +10,7 @@ class Greetings(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'{self.bot.user.name} has connected to Discord!')
+        await self.bot.change_presence(activity=discord.Game(name="Genshin Impact"))
 
     @commands.command()
     async def hello(self, ctx, *, member: discord.Member = None):

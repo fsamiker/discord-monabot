@@ -18,7 +18,7 @@ class Reminder:
 
     @property
     def display_name(self):
-        return f'{self.r_type} - {self.get_display_time()} [#ID{self._id}]'
+        return f'{self.r_type} - {self.get_display_time()} [#id:{self._id}]'
 
     def update_time(self, when):
         self.when = when
@@ -45,7 +45,7 @@ class Reminders(commands.Cog):
         loop.create_task(self.reminder_processor())
 
     def _load_timezones(self):
-        with open('data/discord_timezones.json', 'r') as f:
+        with open('data/utility/discord_timezones.json', 'r') as f:
             data = json.load(f)
         return data
 
@@ -138,7 +138,7 @@ class Reminders(commands.Cog):
 
     @commands.command()
     async def cancelreminder(self, ctx, value):
-        """Cancel a current reminder"""
+        """Cancel a current reminder. <include reminder #id>"""
         if value.lower() == 'all':
             reminder_list = self.get_all_reminders(ctx.author)
             count = len(reminder_list)
