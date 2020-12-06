@@ -40,7 +40,7 @@ class Reminders(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Starting Reminder Server')
+        print('Starting Reminder Server...')
         loop = asyncio.get_event_loop()
         loop.create_task(self.reminder_processor())
 
