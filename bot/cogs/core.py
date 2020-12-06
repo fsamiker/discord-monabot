@@ -14,7 +14,7 @@ class Core(commands.Cog):
         print(f'Pre-Generating Images...')
         info_cog = self.bot.get_cog('Info')
         for _, c in info_cog.characters.items():
-            info_cog.generate_basic_info(c)
+            await info_cog.generate_basic_info(c)
         print(f'Image Generation Complete')
 
 
