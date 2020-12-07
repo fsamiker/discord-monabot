@@ -9,3 +9,4 @@ python-dotenv==0.15.0
 typing-extensions==3.7.4.3
 yarl==1.5.1
 pytz==2020.4
+Pillow==8.0.1
