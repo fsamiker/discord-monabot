@@ -40,20 +40,35 @@ class Character:
         output = []
         for s in self.skills:
             name = s.replace(':', '-')
-            output.append(Skill(sk_db.get(name)))
+            output.append(sk_db.get(name))
         return output
 
     def get_ascension_resource(self, starting_lvl=1, end_lvl=90):
-        asc_list = sorted(self.ascension, key=lambda i:i['Required Level'])
-        filtered_list = [a for a in asc_list if int(a['Required Level']) >= starting_lvl and int(a['Required Level']) <= end_lvl]
+        asc_list = sorted(self.ascension, key=lambda i:int(i['Required Level']))
 
-        materials_needed = [a['Materials'] for a in filtered_list]
+        return self.get_material_list(asc_list, 'Required Level', 'Materials', starting_lvl, end_lvl)
+
+    def get_talent_resource(self, sk_db, starting_lvl=1, end_lvl=10):
+        talents = self.get_skills(sk_db)
+
+        material_lst = []
+        for t in talents:
+            material_lst += t.levelling
+
+        material_lst = sorted(material_lst, key=lambda i:int(i['Level']))
+        return self.get_material_list(material_lst, 'Level', 'Material', starting_lvl, end_lvl)
+
+    @staticmethod
+    def get_material_list(material_lst, lvl_key, mat_key, starting_lvl, end_lvl):
+        filtered_list = [m for m in material_lst if int(m[lvl_key]) >= starting_lvl and int(m[lvl_key]) <= end_lvl]
+        print(filtered_list)
+        materials_needed = [a[mat_key] for a in filtered_list]
         mora_needed  = sum([int(a['Mora'].replace(',', '')) for a in filtered_list])
         lvl_range = []
         if len(filtered_list) >= 1:
-            lvl_range.append(filtered_list[0]['Required Level'])
+            lvl_range.append(filtered_list[0][lvl_key])
         if len(filtered_list) >=2:
-            lvl_range.append(filtered_list[-1]['Required Level'])
+            lvl_range.append(filtered_list[-1][lvl_key])
 
         consolidated_materials = {}
         for m in materials_needed:

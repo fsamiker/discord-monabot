@@ -33,7 +33,6 @@ class Info(commands.Cog):
             m = Material(mat)
             self.materials[m.name] = m
 
-
     @commands.command()
     async def character(self, ctx, name: str, option: str='Profile'):
         """Get Character Details"""
@@ -54,6 +53,7 @@ class Info(commands.Cog):
 
     @commands.command()
     async def ascensionmaterial(self, ctx, name: str, starting_lvl:int=1, target_lvl:int=90):
+        """Get Ascension Materials needed. Command: ascensionmaterial <character name> <start lvl> <end lvl>"""
         character = self.characters.get(name.capitalize())
         if character is None:
             await self.unknown_character(character.name)
@@ -67,10 +67,10 @@ class Info(commands.Cog):
 
         if len(lvl_range) == 1:
             output_file = f'assets/genshin/generated/CA_{lvl_range[0]}_{character.name}.png'
-            title = f'{character.name} - Ascension Lvl {lvl_range[0]}'
+            title = f'{character.name} - Ascension Materials Lvl {lvl_range[0]}'
         else:
             output_file = f'assets/genshin/generated/CA_{lvl_range[0]}_{lvl_range[1]}_{character.name}.png'
-            title = f'{character.name} - Ascension Lvl {lvl_range[0]} to {lvl_range[1]}'
+            title = f'{character.name} - Ascension Materials Lvl {lvl_range[0]} to {lvl_range[1]}'
 
         icon = character.get_icon()
 
@@ -81,6 +81,36 @@ class Info(commands.Cog):
             await self.generate_material_info(icon, title, resources, output_file)
             await ctx.send(file=discord.File(output_file))
 
+    @commands.command()
+    async def talentmaterial(self, ctx, name: str, starting_lvl:int=1, target_lvl:int=15):
+        """Get Talent Materials needed. Command: talentmaterial <character name> <start lvl> <end lvl>"""
+        character = self.characters.get(name.capitalize())
+        if character is None:
+            await self.unknown_character(character.name)
+            return
+
+        resources = character.get_talent_resource(self.skills, starting_lvl, target_lvl)
+        lvl_range =resources['Range']
+        if not lvl_range:
+            await ctx.send(f'Talent lvls only go up to 10. (15 including some constellations)')
+            return
+
+        if len(lvl_range) == 1:
+            output_file = f'assets/genshin/generated/CTM_{lvl_range[0]}_{character.name}.png'
+            title = f'{character.name} - Talent Materials Lvl {lvl_range[0]}'
+        else:
+            output_file = f'assets/genshin/generated/CTM_{lvl_range[0]}_{lvl_range[1]}_{character.name}.png'
+            title = f'{character.name} - Talent Materials Lvl {lvl_range[0]} to {lvl_range[1]}'
+
+        icon = character.get_icon()
+
+        if os.path.isfile(output_file):
+            await ctx.send(file=discord.File(output_file))
+        else:
+            await ctx.send(f'Hold on. Collecting research on {character.name}...')
+            await self.generate_material_info(icon, title, resources, output_file)
+            await ctx.send(file=discord.File(output_file))
+        
     async def generate_basic_info(self, ch):
         self.im_p.generate_character_info(ch)
 

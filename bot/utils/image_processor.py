@@ -123,13 +123,13 @@ class ImageProcessor:
         
         title_margin_ratio_w = 1.5
         title_margin_ratio_h = 0.25
-        title_fontsize = 150
+        title_fontsize = 140
 
         mora_margin_ratio_w = 0.33
         mora_margin_ratio_h = 0.1
         mora_text_ratio_w = 1.5
         mora_text_ratio_h = 0.15
-        mora_fontsize = 150
+        mora_fontsize = 120
 
         mat_icon_size = (256, 256)
         mat_starting_ratio_w = 0.2
