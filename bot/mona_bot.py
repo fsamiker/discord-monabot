@@ -9,6 +9,7 @@ from bot.cogs.greetings import Greetings
 from bot.cogs.admin import Admin
 from bot.cogs.core import Core
 from bot.cogs.info import Info
+from bot.cogs.fun import Misc
 from bot.utils.image_processor import ImageProcessor
 
 import os
@@ -32,6 +33,7 @@ bot.add_cog(Resin(bot))
 bot.add_cog(ErrorHandler(bot))
 bot.add_cog(Admin(bot, ADMIN_ID))
 bot.add_cog(Info(bot, im_proc))
+bot.add_cog(Misc(bot))
 
 # Run Bot
 bot.run(TOKEN)
