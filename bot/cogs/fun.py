@@ -19,7 +19,7 @@ class Misc(commands.Cog):
             await ctx.send(f'Sorry you have already wished today')
             return
         else:
-            self._wished[member_id] = now+timedelta(seconds=15)
+            self._wished[member_id] = now+timedelta(days=15)
 
         info_cog = self.bot.get_cog('Info')
         rolls = info_cog.get_all_character_names()
@@ -45,7 +45,7 @@ class Misc(commands.Cog):
     async def attack(self, ctx, target: discord.Member):
         """Attack a player!"""
         maximum_dmg = 20000
-        skills = self.bot.get_cog('Info')
-
+        skills = self.bot.get_cog('Info').skills
+        random_sk = random.choice(list(skills.keys()))
         dmg = random.randint(1, maximum_dmg)
-        await ctx.send(f'You attacked {mention_by_id(target.id)} for {dmg} damage!')
+        await ctx.send(f'You attacked {mention_by_id(target.id)} with "{random_sk}" for {dmg} damage!')

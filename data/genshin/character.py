@@ -39,8 +39,7 @@ class Character:
     def get_skills(self, sk_db):
         output = []
         for s in self.skills:
-            name = s.replace(':', '-')
-            output.append(sk_db.get(name))
+            output.append(sk_db.get(s))
         return output
 
     def get_ascension_resource(self, starting_lvl=1, end_lvl=90):
@@ -61,7 +60,6 @@ class Character:
     @staticmethod
     def get_material_list(material_lst, lvl_key, mat_key, starting_lvl, end_lvl):
         filtered_list = [m for m in material_lst if int(m[lvl_key]) >= starting_lvl and int(m[lvl_key]) <= end_lvl]
-        print(filtered_list)
         materials_needed = [a[mat_key] for a in filtered_list]
         mora_needed  = sum([int(a['Mora'].replace(',', '')) for a in filtered_list])
         lvl_range = []

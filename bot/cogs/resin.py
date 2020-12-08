@@ -12,7 +12,7 @@ class Resin(commands.Cog):
         self._resin_list = {}
 
     @commands.command()
-    async def checkresin(self, ctx, *, member: discord.Member=None):
+    async def checkresin(self, ctx, member: discord.Member=None):
         """Shows current resin value. Blank for self or Tag a user"""
         if member is None:
             member = ctx.message.author

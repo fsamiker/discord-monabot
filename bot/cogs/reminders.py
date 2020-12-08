@@ -4,6 +4,8 @@ from discord.ext import commands
 import asyncio
 import json
 import pytz
+import pickle
+import os
 
 class Reminder:
     
@@ -28,6 +30,9 @@ class Reminder:
         utc_tz = pytz.timezone('UTC')
         display_time = utc_tz.localize(self.when).astimezone(user_tz)
         return display_time.strftime("%d %b %Y, %H:%M %z")
+    
+    def clone(self):
+        return Reminder(self._id, self.ctx, self.when, self.message, self.owner, self.r_type, self.tz)
 
 class Reminders(commands.Cog):
 
@@ -44,11 +49,6 @@ class Reminders(commands.Cog):
         loop = asyncio.get_event_loop()
         loop.create_task(self.reminder_processor())
 
-    def _load_timezones(self):
-        with open('data/utility/discord_timezones.json', 'r') as f:
-            data = json.load(f)
-        return data
-
     async def reminder_processor(self):
         while self._enable_reminders:
             now = datetime.utcnow()
@@ -60,48 +60,27 @@ class Reminders(commands.Cog):
                 self._reminder_list.pop(0)
             await asyncio.sleep(1)
 
-    def add_reminder(self, reminder):
-        self._reminder_list.append(reminder)
-        self.sort_reminders()
-        self.counter += 1
-
-    def sort_reminders(self):
-        self._reminder_list.sort(key=lambda r: r.when)
-
-    def get_all_reminders(self, owner):
-        return [r for r in self._reminder_list if r.owner == owner]
-
-    def get_reminder_by_id(self, _id):
-        for i, j in enumerate(self._reminder_list):
-            if j._id == _id:
-                index = i
-                r = j
-                break
-        else:
-            index = None
-            r = None
-        
-        return r, index
-
-    def delete_reminder(self, index):
-        self._reminder_list.pop(index)
-
-    def timezone_convertor(self, discord_region):
-        if discord_region.lower() in self.tz.keys():
-            return self.tz[discord_region]
-        return 'UTC'
-
-    def reminder_exists(self, owner, r_type):
-        user_reminders = self.get_all_reminders(owner)
-        duplicates = [r for r in user_reminders if r.r_type.lower() == r_type.lower()]
-        return bool(duplicates)
-
     @commands.command()
     async def remindme(self, ctx, *args):
-        """Sets reminder. Options: [resin <value>]"""
+        """Sets reminder"""
+
+        async def usage(message):
+            examples = '''```Command: remindme <option> <values>         
+Options: \u2022 resin - Max Resin reminder. Enter current resin value
+
+Example Usage:
+\u2022 $f remindme resin 50```'''
+            await ctx.send(f'{message}\n{examples}')
+
+        option = args[0].lower()
+
+        if option not in ['resin']:
+            await usage('Invalid option')
+            return
+
         member_id = ctx.author.id
 
-        if args[0].lower() == 'resin':
+        if option == 'resin':
             resin_cog = self.bot.get_cog('Resin')
             if resin_cog is not None:
 
@@ -138,7 +117,18 @@ class Reminders(commands.Cog):
 
     @commands.command()
     async def cancelreminder(self, ctx, value):
-        """Cancel a current reminder. <include reminder #id>"""
+        """Cancel a current reminder"""
+
+        async def usage(message):
+            examples = '''```Command: cancelreminder <reminder ID or all>         
+Reminder ID: Reminder ID to be canceled. Get ID from checkreminders. Refer [#id<number>] in list
+All: Cancels all users reminders
+
+Example Usage:
+\u2022 $f cancelreminder 5
+\u2022 $f cancelreminder all```'''
+            await ctx.send(f'{message}\n{examples}')
+
         if value.lower() == 'all':
             reminder_list = self.get_all_reminders(ctx.author)
             count = len(reminder_list)
@@ -151,7 +141,7 @@ class Reminders(commands.Cog):
         try:
             _id = int(value)
         except:
-            await ctx.send(f'ID should be a number')
+            await usage(f'ID should be a number')
             return
 
         r, index = self.get_reminder_by_id(_id)
@@ -166,3 +156,44 @@ class Reminders(commands.Cog):
 
         self.delete_reminder(index)
         await ctx.send(f'Reminder #ID:{_id} has been cancelled')
+
+    def _load_timezones(self):
+        with open('data/utility/discord_timezones.json', 'r') as f:
+            data = json.load(f)
+        return data
+
+    def add_reminder(self, reminder):
+        self._reminder_list.append(reminder)
+        self.sort_reminders()
+        self.counter += 1
+
+    def sort_reminders(self):
+        self._reminder_list.sort(key=lambda r: r.when)
+
+    def get_all_reminders(self, owner):
+        return [r for r in self._reminder_list if r.owner == owner]
+
+    def get_reminder_by_id(self, _id):
+        for i, j in enumerate(self._reminder_list):
+            if j._id == _id:
+                index = i
+                r = j
+                break
+        else:
+            index = None
+            r = None
+        
+        return r, index
+
+    def delete_reminder(self, index):
+        self._reminder_list.pop(index)
+
+    def timezone_convertor(self, discord_region):
+        if discord_region.lower() in self.tz.keys():
+            return self.tz[discord_region]
+        return 'UTC'
+
+    def reminder_exists(self, owner, r_type):
+        user_reminders = self.get_all_reminders(owner)
+        duplicates = [r for r in user_reminders if r.r_type.lower() == r_type.lower()]
+        return bool(duplicates)

@@ -10,4 +10,4 @@ class Skill:
         self.levelling = sk_json.get('Leveling', [])
 
     def get_icon(self):
-        return f'assets/genshin/icons/i_{self.name}.png'
+        return f'assets/genshin/icons/i_{self.name.replace(":", "-")}.png'
