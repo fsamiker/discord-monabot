@@ -42,3 +42,31 @@ class Character:
             name = s.replace(':', '-')
             output.append(Skill(sk_db.get(name)))
         return output
+
+    def get_ascension_resource(self, starting_lvl=1, end_lvl=90):
+        asc_list = sorted(self.ascension, key=lambda i:i['Required Level'])
+        filtered_list = [a for a in asc_list if int(a['Required Level']) >= starting_lvl and int(a['Required Level']) <= end_lvl]
+
+        materials_needed = [a['Materials'] for a in filtered_list]
+        mora_needed  = sum([int(a['Mora'].replace(',', '')) for a in filtered_list])
+        lvl_range = []
+        if len(filtered_list) >= 1:
+            lvl_range.append(filtered_list[0]['Required Level'])
+        if len(filtered_list) >=2:
+            lvl_range.append(filtered_list[-1]['Required Level'])
+
+        consolidated_materials = {}
+        for m in materials_needed:
+            for item in m:
+                if item[0] is None:
+                    continue
+                if item[0] in consolidated_materials.keys():
+                    consolidated_materials[item[0]] += int(item[1])
+                else:
+                    consolidated_materials[item[0]] = int(item[1])
+        
+        return {
+            'Materials': consolidated_materials,
+            'Mora': mora_needed,
+            'Range': lvl_range
+        }

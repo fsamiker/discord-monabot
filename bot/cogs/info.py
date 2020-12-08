@@ -40,7 +40,7 @@ class Info(commands.Cog):
 
         character = self.characters.get(name.capitalize())
         if character is None:
-            await ctx.send(f'"{name}" does not seem to be a known character in Tevyat')
+            await self.unknown_character(character.name)
             return
 
         if option.lower() == 'profile':
@@ -52,5 +52,44 @@ class Info(commands.Cog):
                 await self.generate_basic_info(character)
                 await ctx.send(file=discord.File(image))
 
+    @commands.command()
+    async def ascensionmaterial(self, ctx, name: str, starting_lvl:int=1, target_lvl:int=90):
+        character = self.characters.get(name.capitalize())
+        if character is None:
+            await self.unknown_character(character.name)
+            return
+
+        resources = character.get_ascension_resource(starting_lvl, target_lvl)
+        lvl_range =resources['Range']
+        if not lvl_range:
+            await ctx.send(f'There is no ascension available in the select lvl range {starting_lvl} to {target_lvl}')
+            return
+
+        if len(lvl_range) == 1:
+            output_file = f'assets/genshin/generated/CA_{lvl_range[0]}_{character.name}.png'
+            title = f'{character.name} - Ascension Lvl {lvl_range[0]}'
+        else:
+            output_file = f'assets/genshin/generated/CA_{lvl_range[0]}_{lvl_range[1]}_{character.name}.png'
+            title = f'{character.name} - Ascension Lvl {lvl_range[0]} to {lvl_range[1]}'
+
+        icon = character.get_icon()
+
+        if os.path.isfile(output_file):
+            await ctx.send(file=discord.File(output_file))
+        else:
+            await ctx.send(f'Hold on. Collecting research on {character.name}...')
+            await self.generate_material_info(icon, title, resources, output_file)
+            await ctx.send(file=discord.File(output_file))
+
     async def generate_basic_info(self, ch):
         self.im_p.generate_character_info(ch)
+
+    async def generate_material_info(self, icon, title, resource, tag):
+        self.im_p.generate_materials_needed(icon, title, resource, tag)
+
+    async def unknown_character(self, ctx, name):
+        await ctx.send(f'"{name}" does not seem to be a known character in Tevyat')
+
+    def get_all_character_names(self):
+        output = [k for k in self.characters.keys()]
+        return output
