@@ -8,9 +8,10 @@ from bot.cogs.reminders import Reminders
 from bot.cogs.greetings import Greetings
 from bot.cogs.admin import Admin
 from bot.cogs.core import Core
-from bot.cogs.info import Info
-from bot.cogs.fun import Misc
+from bot.cogs.character import Character
+from bot.cogs.misc import Misc
 from bot.cogs.emoji import Emoji
+from bot.cogs.material import Material
 from bot.utils.image_processor import ImageProcessor
 
 import os
@@ -23,7 +24,7 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 ADMIN_ID = os.getenv('ADMIN_ID')
 
 # Initiate bot
-bot = commands.Bot(command_prefix='!f ')
+bot = commands.Bot(command_prefix='m!')
 im_proc = ImageProcessor()
 
 # Add cog modules
@@ -33,9 +34,10 @@ bot.add_cog(Reminders(bot))
 bot.add_cog(Resin(bot))
 bot.add_cog(ErrorHandler(bot))
 bot.add_cog(Admin(bot, ADMIN_ID))
-bot.add_cog(Info(bot, im_proc))
+bot.add_cog(Character(bot, im_proc))
 bot.add_cog(Misc(bot))
 bot.add_cog(Emoji(bot))
+bot.add_cog(Material(bot))
 
 # Run Bot
 bot.run(TOKEN)

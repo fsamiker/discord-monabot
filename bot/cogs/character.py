@@ -1,12 +1,12 @@
 from data.genshin.material import Material
 from data.genshin.skill import Skill
-from data.genshin.character import Character
+from data.genshin.character import Character as char
 from discord.ext import commands
 import discord
 import json
 import os
 
-class Info(commands.Cog):
+class Character(commands.Cog):
 
     def __init__(self, bot, image_processor):
         self.bot = bot
@@ -16,7 +16,7 @@ class Info(commands.Cog):
         with open('data/genshin/characters.json', 'r') as f:
             _c = json.load(f)
         for _ in _c:
-            c = Character(_)
+            c = char(_)
             self.characters[c.name] = c
 
         self.skills = {}
@@ -52,7 +52,7 @@ Example Usage:
 
         character = self.characters.get(name.capitalize())
         if character is None:
-            await self.unknown_character(character.name)
+            await self.unknown_character(name)
             return
 
         if option.lower() == 'default':

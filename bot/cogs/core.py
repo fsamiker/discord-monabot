@@ -12,7 +12,7 @@ class Core(commands.Cog):
         await self.bot.change_presence(activity=discord.Game(name="Genshin Impact"))
 
         print(f'Pre-Generating Images...')
-        info_cog = self.bot.get_cog('Info')
+        info_cog = self.bot.get_cog('Character')
         for _, c in info_cog.characters.items():
             await info_cog.generate_basic_info(c)
         print(f'Image Generation Complete')
