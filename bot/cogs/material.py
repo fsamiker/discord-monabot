@@ -51,5 +51,5 @@ Example Usage:
         embed = discord.Embed(title=f'{material.name}', description=f'{desc}')
         embed.set_thumbnail(url='attachment://image.png')
         embed.add_field(name='How to Obtain', value=obtain, inline=False)
-        embed.set_footer(text=f'Type: {material.type}')
+        embed.set_footer(text=f'{material.type}')
         return embed

@@ -5,7 +5,7 @@ class Skill:
         if self.name is None:
             raise KeyError
         self.description = sk_json.get('Description', 'N/A').replace('\n', ' ')
-        self.type = sk_json.get('Type', 'Unknown')
+        self.type = sk_json.get('Type', 'Unknown').replace(' Talent', '')
         self.scaling = sk_json.get('Scaling', [])
         self.levelling = sk_json.get('Leveling', [])
 
