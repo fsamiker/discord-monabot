@@ -10,6 +10,7 @@ from bot.cogs.admin import Admin
 from bot.cogs.core import Core
 from bot.cogs.info import Info
 from bot.cogs.fun import Misc
+from bot.cogs.emoji import Emoji
 from bot.utils.image_processor import ImageProcessor
 
 import os
@@ -34,6 +35,7 @@ bot.add_cog(ErrorHandler(bot))
 bot.add_cog(Admin(bot, ADMIN_ID))
 bot.add_cog(Info(bot, im_proc))
 bot.add_cog(Misc(bot))
+bot.add_cog(Emoji(bot))
 
 # Run Bot
 bot.run(TOKEN)

@@ -34,19 +34,20 @@ class Info(commands.Cog):
             self.materials[m.name] = m
 
     @commands.command()
-    async def character(self, ctx, name: str, option: str='Profile'):
+    async def character(self, ctx, name: str, option: str='default'):
         """Get Character Details"""
 
         async def usage(message):
             examples = '''```Command: character <character name> optional: <option>          
-Options: \u2022 profile - Basic Character Information
+Options: \u2022 default - Basic Character Information text
+         \u2022 image - Basic Character Information image
 
 Example Usage:
 \u2022 $f character amber
-\u2022 $f character zhongli```'''
+\u2022 $f character zhongli image```'''
             await ctx.send(f'{message}\n{examples}')
 
-        if option.lower() not in ['profile']:
+        if option.lower() not in ['default', 'image']:
             await usage('Invalid command')
 
         character = self.characters.get(name.capitalize())
@@ -54,7 +55,13 @@ Example Usage:
             await self.unknown_character(character.name)
             return
 
-        if option.lower() == 'profile':
+        if option.lower() == 'default':
+            embed = self.get_character_basic_embed(character)
+            file = discord.File(character.get_icon(), filename='image.png')
+            await ctx.send(file=file, embed=embed)
+            return
+
+        if option.lower() == 'image':
             image = f'assets/genshin/generated/basic_info_{character.name}.png'
             if os.path.isfile(image):
                 await ctx.send(file=discord.File(image))
@@ -116,15 +123,20 @@ Example Usage:
 
         if len(lvl_range) == 1:
             output_file = f'assets/genshin/generated/CA_{lvl_range[0]}_{character.name}.png'
-            title = f'{character.name} - Ascension Materials Lvl {lvl_range[0]}'
+            title = f'{character.name} - Ascension Materials'
+            footer = f'\nLevel: {lvl_range[0]}'
         else:
             output_file = f'assets/genshin/generated/CA_{lvl_range[0]}_{lvl_range[1]}_{character.name}.png'
-            title = f'{character.name} - Ascension Materials Lvl {lvl_range[0]} to {lvl_range[1]}'
+            title = f'{character.name} - Ascension Materials'
+            footer = f'\nLevel: {lvl_range[0]} to {lvl_range[1]}'
 
-        txt = self.get_material_list_text(title, resources)
+        icon = character.get_icon()
+        embed = self.get_material_embed(title, resources, footer)
         if option.lower() == 'default':
-            await ctx.send(f'These are the materials needed...\n{txt}')
+            file = discord.File(icon, filename='image.png')
+            await ctx.send(file=file, embed=embed)
             return
+
         elif option.lower() == 'image':
             icon = character.get_icon()
 
@@ -189,18 +201,20 @@ Example Usage:
 
         if len(lvl_range) == 1:
             output_file = f'assets/genshin/generated/CTM_{lvl_range[0]}_{character.name}.png'
-            title = f'{character.name} - Talent Materials Lvl {lvl_range[0]}'
+            title = f'{character.name} - Talent Materials'
+            footer = f'\nLevel: {lvl_range[0]}'
         else:
             output_file = f'assets/genshin/generated/CTM_{lvl_range[0]}_{lvl_range[1]}_{character.name}.png'
-            title = f'{character.name} - Talent Materials Lvl {lvl_range[0]} to {lvl_range[1]}'
+            title = f'{character.name} - Talent Materials'
+            footer = f'\nLevel: {lvl_range[0]} to {lvl_range[1]}'
 
-        txt = self.get_material_list_text(title, resources)
+        icon = character.get_icon()
+        embed = self.get_material_embed(title, resources, footer)
         if option.lower() == 'default':
-            await ctx.send(f'These are the materials needed...\n{txt}')
+            file = discord.File(icon, filename='image.png')
+            await ctx.send(file=file, embed=embed)
             return
         elif option.lower() == 'image':
-            icon = character.get_icon()
-
             if os.path.isfile(output_file):
                 await ctx.send('These are the materials needed...',file=discord.File(output_file))
             else:
@@ -221,12 +235,33 @@ Example Usage:
         output = [k for k in self.characters.keys()]
         return output
 
-    @staticmethod
-    def get_material_list_text(title, resources):
-        output = f'{title}\n\n'
-        output += f'Mora: {resources["Mora"]}'
-        output += f'\nMaterials:'
+    def get_material_embed(self, title, resources, footer):
+        emojis = self.bot.get_cog('Emoji').emojis
+        embed = discord.Embed(title=f'{title}', description=f'{emojis.get("Mora")} {resources["Mora"]}')
+        embed.set_thumbnail(url='attachment://image.png')
+        embed.set_footer(text=footer)
+        i = 0
+        for mat, count in resources["Materials"].items():
+            embed.add_field(name=mat, value=f'x{count}', inline=True)
+            i += 1
 
-        for mat, count in resources['Materials'].items():
-            output += f'\n\u2022 {mat} x{count}'
-        return f'```{output}```'
+        while (i%3 != 0):
+            embed.add_field(name='\u200b', value='\u200b', inline=True)
+            i += 1
+        
+        return embed
+
+    def get_character_basic_embed(self, character):
+        emojis = self.bot.get_cog('Emoji').emojis
+        rarity = ''
+        for _ in range(character.rarity):
+            rarity += f'{emojis.get("Star")}'
+        embed = discord.Embed(title=f'{emojis.get(character.element, "")} {character.name}', description=f'{rarity}')
+        embed.set_thumbnail(url='attachment://image.png')
+        embed.add_field(name='Weapon', value=character.weapon)
+        embed.add_field(name='Region', value=character.region)
+        embed.add_field(name='Birthday', value=character.birthday)
+        embed.add_field(name='Affiliation', value=character.affiliation)
+        embed.add_field(name='Special Dish', value=character.special_dish)
+        embed.add_field(name='\u200b', value='\u200b')
+        return embed
