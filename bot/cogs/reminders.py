@@ -4,8 +4,6 @@ from discord.ext import commands
 import asyncio
 import json
 import pytz
-import pickle
-import os
 
 class Reminder:
     

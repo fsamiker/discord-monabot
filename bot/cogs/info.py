@@ -84,7 +84,7 @@ Example Usage:
         # Check Inputs
         character = self.characters.get(name.capitalize())
         if character is None:
-            await self.unknown_character(character.name)
+            await self.unknown_character(name)
             return
 
         starting_lvl = 1  # Default value
@@ -131,7 +131,7 @@ Example Usage:
             if os.path.isfile(output_file):
                 await ctx.send('These are the materials needed...',file=discord.File(output_file))
             else:
-                await ctx.send(f'Hold on. Collecting research on {character.name}...')
+                await ctx.send(f'Hold on. Collecting research on {name}...')
                 await self.generate_material_info(icon, title, resources, output_file)
                 await ctx.send('These are the materials needed...',file=discord.File(output_file))
 
@@ -156,7 +156,7 @@ Example Usage:
         # Check Inputs
         character = self.characters.get(name.capitalize())
         if character is None:
-            await self.unknown_character(character.name)
+            await self.unknown_character(name)
             return
 
         starting_lvl = 1  # Default value
