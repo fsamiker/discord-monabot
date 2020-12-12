@@ -1,11 +1,12 @@
+from data.genshin.models import Material
+from data.db import session_scope
 from discord.ext import commands
 import discord
 
-class Material(commands.Cog):
+class Materials(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.materials = self.bot.get_cog('Character').materials
 
     @commands.command()
     async def material(self, ctx, *args):
@@ -19,30 +20,27 @@ Example Usage:
 \u2022 m!material sharp arrowhead```'''
             await ctx.send(f'{message}\n{examples}')
 
-        if any([type(w)!=str for w in args]):
-            await usage('Invalid command')
-            return
 
         material_name = ' '.join([w.capitalize() for w in args])
-        if material_name not in self.materials.keys():
-            await ctx.send(f'Could not find material "{material_name}"')
-
-        material = self.materials.get(material_name)
-
-        file = discord.File(material.get_icon(), filename='image.png')
-        embed = self.get_material_basic_info_embed(material)
-        await ctx.send(file=file, embed=embed)
+        with session_scope() as s:
+            m = s.query(Material).filter_by(name=material_name).first()
+            if m:
+                file = discord.File(m.icon_url, filename='image.png')
+                embed = self.get_material_basic_info_embed(m)
+                await ctx.send(file=file, embed=embed)
+            else:
+                await ctx.send(f'Could not find material "{material_name}"')
 
     def get_material_basic_info_embed(self, material):
-        emojis = self.bot.get_cog('Emoji').emojis
         desc = ''
-        for _ in range(material.rarity):
-            desc += f'{emojis.get("Star")}'
+        if material.rarity:
+            for _ in range(material.rarity):
+                desc += f'{self.bot.get_cog("Flair").get_emoji("Star")}'
         desc += f'\n\n{material.description}'
 
         obtain = ''
         i = 1
-        for h in material.obtain:
+        for h in material.how_to_obtain:
             if i != 1:
                 obtain += '\n'
             obtain += f'\u2022 {h}'
@@ -51,5 +49,5 @@ Example Usage:
         embed = discord.Embed(title=f'{material.name}', description=f'{desc}')
         embed.set_thumbnail(url='attachment://image.png')
         embed.add_field(name='How to Obtain', value=obtain, inline=False)
-        embed.set_footer(text=f'{material.type}')
+        embed.set_footer(text=f'{material.typing}')
         return embed

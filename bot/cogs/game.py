@@ -4,10 +4,9 @@ from datetime import datetime, timedelta
 import discord
 import random
 
-class Misc(commands.Cog):
+class Game(commands.Cog, name='DiscordFun'):
     def __init__(self, bot):
         self.bot = bot
-        self._wished = {}
 
     @commands.command()
     async def wish(self, ctx):
@@ -28,18 +27,6 @@ class Misc(commands.Cog):
         wished = rolls[n]
         file = f'assets/genshin/characters/i_{wished}.png'
         await ctx.send(f'{wished} joins your party!',file=discord.File(file))
-
-    @commands.command()
-    async def quotes(self, ctx):
-        """Well known genshin quotes"""
-        quotes = [
-            'Theres no reason to not roll for Zhongli - Pinocchio 2020',
-            "I don't want Keqing - Pinocchio 2020",
-        ]
-
-        n = random.randint(0, len(quotes)-1)
-        quote = quotes[n]
-        await ctx.send(f'```{quote}```')
 
     @commands.command()
     async def attack(self, ctx, target: discord.Member):

@@ -1,45 +1,52 @@
-from sqlalchemy.sql.sqltypes import Boolean
+from enum import unique
+from sqlalchemy.sql.sqltypes import BigInteger, Boolean, DateTime
 from data.db import Base
 from sqlalchemy import Column, Integer, String, Date
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.orm import relationship
 
-class User(Base):
-    __tablename__ = 'discordusers'
-    id = Column(Integer, primary_key=True)
-    reminders = relationship("Reminder", back_populates="owner")
-    resin = relationship("Resin", uselist=False, back_populates="owner")
-    profile = relationship("GameProfile", uselist=False, back_populates="owner")
-
 class Reminder(Base):
     __tablename__ = 'reminders'
     id = Column(Integer, primary_key=True)
-    owner_id = Column(Integer, ForeignKey('discordusers.id'))
-    owner = relationship("User", back_populates="reminders")
-    when = Column(Date)
+    discord_id = Column(BigInteger)
+    when = Column(DateTime)
     channel = Column(String)
     message = Column(String)
     typing = Column(String)
     timezone = Column(String)
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'discord_id': self.discord_id,
+            'when': self.when,
+            'channel': self.channel,
+            'message': self.message,
+            'typing': self.typing,
+            'timezone': self.timezone
+        }
+
+    def __repr__(self):
+        return f'<{self.discord_id} - {self.typing}>'
+
 class Resin(Base):
     __tablename__ = 'resins'
     id = Column(Integer, primary_key=True)
-    owner_id = Column(Integer, ForeignKey('discordusers.id'))
-    owner = relationship("User", back_populates="resin")
-    timestamp = Column(Date)
+    discord_id = Column(BigInteger, unique=True)
+    resin = Column(Integer)
+    timestamp = Column(DateTime)
 
 class GameProfile(Base):
     __tablename__ = 'gameprofiles'
     id = Column(Integer, primary_key=True)
-    owner_id = Column(Integer, ForeignKey('discordusers.id'))
-    owner = relationship("User", back_populates="profile")
+    discord_id = Column(BigInteger, unique=True)
     primogems = Column(Integer)
     characters = relationship("GameCharacter")
     stamina = Column(Integer)
     health = Column(Integer)
     level = Column(Integer)
-    deathtime = Column(Date)
+    experience = Column(Integer)
+    deathtime = Column(DateTime)
 
 class GameCharacter(Base):
     __tablename__ = 'gamecharacters'

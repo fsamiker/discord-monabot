@@ -2,7 +2,7 @@ from discord import activity
 from discord.ext import commands
 import discord
 
-class Greetings(commands.Cog):
+class Greetings(commands.Cog, name='Miscellaneous'):
     def __init__(self, bot):
         self.bot = bot
         self._last_member = None

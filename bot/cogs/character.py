@@ -1,38 +1,13 @@
-from bot.utils.text import get_texttable
-from data.genshin.material import Material
-from data.genshin.skill import Skill
-from data.genshin.character import Character as char
+from data.genshin.models import Character
+from data.db import session_scope
 from discord.ext import commands
 import discord
-import json
 import os
 
-class Character(commands.Cog):
+class Characters(commands.Cog):
 
-    def __init__(self, bot, image_processor):
+    def __init__(self, bot):
         self.bot = bot
-        self.im_p = image_processor
-
-        self.characters = {}
-        with open('data/genshin/characters.json', 'r') as f:
-            _c = json.load(f)
-        for _ in _c:
-            c = char(_)
-            self.characters[c.name] = c
-
-        self.skills = {}
-        with open('data/genshin/skills.json', 'r') as f:
-            _s = json.load(f)
-        for _, sk in _s.items():
-            s = Skill(sk)
-            self.skills[s.name] = s
-
-        self.materials = {}
-        with open('data/genshin/materials.json', 'r') as f:
-            _m = json.load(f)
-        for _, mat in _m.items():
-            m = Material(mat)
-            self.materials[m.name] = m
 
     @commands.command()
     async def character(self, ctx, name: str, option: str='default'):
@@ -46,44 +21,39 @@ Options: \u2022 default - Character basic information text
          \u2022 constellations - Character constellations list
 
 Example Usage:
-\u2022 $f character amber
-\u2022 $f character zhongli image
-\u2022 $f character bennett talents
-\u2022 $f character keqing constellations```'''
+\u2022 m!character amber
+\u2022 m!character zhongli image
+\u2022 m!character bennett talents
+\u2022 m!character keqing constellations```'''
             await ctx.send(f'{message}\n{examples}')
 
-        if option.lower() not in ['default', 'image', 'talents', 'constellations']:
+        option = option.lower()
+        name = name.capitalize()
+
+        if option not in ['default', 'image', 'talents', 'constellations']:
             await usage('Invalid command')
 
-        character = self.characters.get(name.capitalize())
-        if character is None:
-            await self.unknown_character(name)
-            return
-
-        icon_file = discord.File(character.get_icon(), filename='image.png')
-
-        if option.lower() == 'default':
-            embed = self.get_character_basic_embed(character)
-            await ctx.send(file=icon_file, embed=embed)
-            return
-
-        if option.lower() == 'image':
-            image = f'assets/genshin/generated/basic_info_{character.name}.png'
-            if os.path.isfile(image):
-                await ctx.send(file=discord.File(image))
-            else:
-                await ctx.send(f'Hold on. Collecting research on {character.name}...')
-                await self.generate_basic_info(character)
-                await ctx.send(file=discord.File(image))
-
-        if option.lower() == 'talents':
-            skills = character.get_skills(self.skills)
-            embed = self.get_skills_embed(skills, character)
-            await ctx.send(file=icon_file, embed=embed)
-
-        if option.lower() == 'constellations':
-            embed = self.get_constellations_embed(character)
-            await ctx.send(file=icon_file, embed=embed)
+        with session_scope() as s:
+            char = s.query(Character).filter_by(name=name).first()
+            if char is None:
+                await self.unknown_character(ctx, name)
+                return
+            icon_file = discord.File(char.icon_url, filename='image.png')
+            if option == 'default':
+                embed = self.get_character_basic_embed(char)
+                await ctx.send(file=icon_file, embed=embed)
+            elif option == 'image':
+                if char.profile_url:
+                    await ctx.send(file=discord.File(char.profile_url))
+                else:
+                    await ctx.send(f'Could not find profile image for {char.name}')
+            elif option == 'talents':
+                talents = char.talents
+                embed = self.get_talents_embed(talents, char)
+                await ctx.send(file=icon_file, embed=embed)
+            elif option == 'constellations':
+                embed = self.get_constellations_embed(char.constellations, char)
+                await ctx.send(file=icon_file, embed=embed)
 
     @commands.command()
     async def ascensionmaterial(self, ctx, name: str, *args):
@@ -97,10 +67,9 @@ Options: \u2022 default - Text list
          \u2022 image - Image Form
 
 Example Usage:
-\u2022 $f ascensionmaterial amber
-\u2022 $f ascensionmaterial amber 1 90
-\u2022 $f ascensionmaterial amber 45 87 image
-\u2022 $f ascensionmaterial amber image```'''
+\u2022 m!ascensionmaterial amber
+\u2022 m!ascensionmaterial amber 1 90
+\u2022 m!ascensionmaterial amber 45 87```'''
             await ctx.send(f'{message}\n{examples}')
 
         # Check Inputs
@@ -174,10 +143,9 @@ Options: \u2022 default - Text list
          \u2022 image - Image Form
 
 Example Usage:
-\u2022 $f talentmaterial amber
-\u2022 $f talentmaterial amber 2 15
-\u2022 $f talentmaterial amber 1 10 image
-\u2022 $f talentmaterial amber image```'''
+\u2022 m!talentmaterial amber
+\u2022 m!talentmaterial amber 2 15
+\u2022 m!talentmaterial amber 1 10```'''
             await ctx.send(f'{message}\n{examples}')
 
         # Check Inputs
@@ -236,19 +204,9 @@ Example Usage:
                 await ctx.send(f'Hold on. Collecting research on {character.name}...')
                 await self.generate_material_info(icon, title, resources, output_file)
                 await ctx.send(f'These are the materials needed...',file=discord.File(output_file))
-        
-    async def generate_basic_info(self, ch):
-        self.im_p.generate_character_info(ch)
-
-    async def generate_material_info(self, icon, title, resource, tag):
-        self.im_p.generate_materials_needed(icon, title, resource, tag)
 
     async def unknown_character(self, ctx, name):
         await ctx.send(f'"{name}" does not seem to be a known character in Tevyat')
-
-    def get_all_character_names(self):
-        output = [k for k in self.characters.keys()]
-        return output
 
     def get_material_embed(self, title, resources, footer):
         emojis = self.bot.get_cog('Emoji').emojis
@@ -267,13 +225,15 @@ Example Usage:
         return embed
 
     def get_character_basic_embed(self, character):
-        emojis = self.bot.get_cog('Emoji').emojis
         rarity = ''
-        for _ in range(character.rarity):
-            rarity += f'{emojis.get("Star")}'
-        embed = discord.Embed(title=f'{emojis.get(character.element, "")} {character.name}', description=f'{rarity}')
+        if character.rarity:
+            for _ in range(character.rarity):
+                rarity += f'{self.bot.get_cog("Flair").get_emoji("Star")}'
+        embed = discord.Embed(title=f'{self.bot.get_cog("Flair").get_emoji(character.element)} {character.name}',
+         description=f'{rarity}',
+         color=self.bot.get_cog("Flair").get_element_color(character.element))
         embed.set_thumbnail(url='attachment://image.png')
-        embed.add_field(name='Weapon', value=character.weapon)
+        embed.add_field(name='Weapon', value=character.weapon_type)
         embed.add_field(name='Region', value=character.region)
         embed.add_field(name='Birthday', value=character.birthday)
         embed.add_field(name='Affiliation', value=character.affiliation)
@@ -281,33 +241,32 @@ Example Usage:
         embed.add_field(name='\u200b', value='\u200b')
         return embed
 
-    def get_skills_embed(self, skills, character):
-        emojis = self.bot.get_cog('Emoji').emojis
-        embed = discord.Embed(title=f'{emojis.get(character.element, "")} {character.name} - Talent List')
-        embed.add_field(name='Name', value=f'{skills[0].name}', inline=True)
-        embed.add_field(name='Type', value=f'{skills[0].type}', inline=True)
-        embed.add_field(name='Description', value=f'{skills[0].description}', inline=True)
+    def get_talents_embed(self, talents, character):
+        embed = discord.Embed(title=f'{self.bot.get_cog("Flair").get_emoji(character.element)} {character.name} - Talent List',
+        color=self.bot.get_cog("Flair").get_element_color(character.element))
+        embed.add_field(name='Name', value=f'{talents[0].name}', inline=True)
+        embed.add_field(name='Type', value=f'{talents[0].typing.replace("Talent", "")}', inline=True)
+        embed.add_field(name='Description', value=f'{talents[0].description}', inline=True)
 
-        for s in skills[1:]:
-            embed.add_field(name='\u200b', value=f'{s.name}', inline=True)
-            embed.add_field(name='\u200b', value=f'{s.type}', inline=True)
-            embed.add_field(name='\u200b', value=f'{s.description}', inline=True)
+        for t in talents[1:]:
+            embed.add_field(name='\u200b', value=f'{t.name}', inline=True)
+            embed.add_field(name='\u200b', value=f'{t.typing.replace("Talent", "")}', inline=True)
+            embed.add_field(name='\u200b', value=f'{t.description}', inline=True)
 
         embed.set_thumbnail(url='attachment://image.png')
         return embed
 
-    def get_constellations_embed(self, character):
-        emojis = self.bot.get_cog('Emoji').emojis
-        const = character.constellation
-        embed = discord.Embed(title=f'{emojis.get(character.element, "")} {character.name} - Constellation List')
-        embed.add_field(name='Constellation', value=f'C{const[0]["Level"]}', inline=True)
-        embed.add_field(name='Name', value=f'{const[0]["Name"]}', inline=True)
-        embed.add_field(name='Effect', value=f'{const[0]["Effect"]}', inline=True)
+    def get_constellations_embed(self, constellations, character):
+        embed = discord.Embed(title=f'{self.bot.get_cog("Flair").get_emoji(character.element)} {character.name} - Constellation List',
+        color=self.bot.get_cog("Flair").get_element_color(character.element))
+        embed.add_field(name='Constellation', value=f'C{constellations[0].level}', inline=True)
+        embed.add_field(name='Name', value=f'{constellations[0].name}', inline=True)
+        embed.add_field(name='Effect', value=f'{constellations[0].effect}', inline=True)
 
-        for c in const[1:]:
-            embed.add_field(name='\u200b', value=f'C{c["Level"]}', inline=True)
-            embed.add_field(name='\u200b', value=f'{c["Name"]}', inline=True)
-            embed.add_field(name='\u200b', value=f'{c["Effect"]}', inline=True)
+        for c in constellations[1:]:
+            embed.add_field(name='\u200b', value=f'C{c.level}', inline=True)
+            embed.add_field(name='\u200b', value=f'{c.name}', inline=True)
+            embed.add_field(name='\u200b', value=f'{c.effect}', inline=True)
 
         embed.set_thumbnail(url='attachment://image.png')
         return embed

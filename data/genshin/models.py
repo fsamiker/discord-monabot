@@ -43,6 +43,7 @@ class Character(Base):
     weapon_type = Column(String)
     icon_url = Column(String)
     portrait_url = Column(String)
+    profile_url = Column (String)
 
     def __repr__(self):
         return f'<Character: {self.name}>'

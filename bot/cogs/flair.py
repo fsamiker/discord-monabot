@@ -1,7 +1,16 @@
 from discord.ext import commands
 import discord
 
-class Emoji(commands.Cog):
+class Flair(commands.Cog):
+
+    element_colors = {
+        'Pyro': discord.Colour.red(),
+        'Cyro': discord.Colour.dark_blue(),
+        'Anemo': discord.Colour.teal(),
+        'Hydro': discord.Colour.blue(),
+        'Electro': discord.Colour.purple(),
+        'Geo': discord.Colour.dark_orange()
+    }
 
     def __init__(self, bot):
         self.bot = bot
@@ -11,6 +20,8 @@ class Emoji(commands.Cog):
     async def on_ready(self):
         print('Retrieving Emojis')
         self.emojis['Mora'] = self.bot.get_emoji(786073743155396685)
+        self.emojis['Resin'] = self.bot.get_emoji(786187951200665600)
+        self.emojis['Primogem'] = self.bot.get_emoji(787307965027057684)
         self.emojis['Star'] = self.bot.get_emoji(786073815062937610)
         self.emojis['Hydro'] = self.bot.get_emoji(786073653879373895)
         self.emojis['Pyro'] = self.bot.get_emoji(786073580629655612)
@@ -37,3 +48,9 @@ class Emoji(commands.Cog):
         self.emojis['Beidou'] = self.bot.get_emoji(786074158739619851)
         self.emojis['Barbara'] = self.bot.get_emoji(786074128502489099)
         self.emojis['Amber'] = self.bot.get_emoji(786074070650322986)
+
+    def get_element_color(self, element):
+        return self.element_colors.get(element, discord.Colour.dark_theme())
+    
+    def get_emoji(self, emoji_name):
+        return self.emojis.get(emoji_name, '')

@@ -1,7 +1,9 @@
+from data.db import session_scope
 import discord
 from datetime import datetime, timedelta
 from discord.ext import commands
-import pytz
+from data.monabot.models import Reminder, Resin as resinmodel
+import math
 
 class Resin(commands.Cog):
 
@@ -9,61 +11,94 @@ class Resin(commands.Cog):
         self.bot = bot
         self.max_resin = 160
         self.resin_rate = 8  #minutes
-        self._resin_list = {}
 
     @commands.command()
     async def checkresin(self, ctx, member: discord.Member=None):
         """Shows current resin value. Blank for self or Tag a user"""
+
+        # Resin Target User
         if member is None:
             member = ctx.message.author
         member_id = member.id
         member_name = member.display_name
-        if member_id in self._resin_list.keys():
-            resin_details = self._resin_list[member_id]
-            time = resin_details['time']
-            set_resin = resin_details['resin']
-            resin_added = (datetime.utcnow() - time).seconds/(8*60)
-            if (set_resin + resin_added) > 160:
-                reminder_cog = self.bot.get_cog('Reminders')
-                user_tz = pytz.timezone(reminder_cog.timezone_convertor(ctx.guild.region.name))
-                utc_tz = pytz.timezone('UTC')
-                max_resin_time = utc_tz.localize(self.get_max_resin_time(time, set_resin)).astimezone(user_tz)
-                await ctx.send(f"{member_name}'s' resin filled up to full at " + max_resin_time.strftime("%d %b %Y, %H:%M %z"))
-            else:
-                current_resin = int(round(self.get_current_resin(time, set_resin)))
-                await ctx.send(f'{member_name} currently has {current_resin} resin')
+        if ctx.guild:
+            server_region = ctx.guild.region.name
         else:
-            await ctx.send(f" I do not have record of {member_name}'s resin")
+            server_region = 'GMT'
+
+        # Prepare embded
+        embed = discord.Embed(title=f"{member_name.capitalize()}'s Resin")
+
+        # Get User Resin
+        with session_scope() as s:
+            resin = s.query(resinmodel).filter_by(discord_id=member_id).first()
+            if not resin:
+                embed.description = 'No Record'
+                embed.set_footer(text='Run m!setresin to record resin')
+            else:
+                max_resin_time = self.get_max_resin_time(resin.timestamp, resin.resin)
+                display_time = self.convert_from_utc(max_resin_time, server_region).strftime("%I:%M %p, %d %b %Y")
+                now = datetime.utcnow()
+                if max_resin_time < now:
+                    embed.add_field(name= f'{self.bot.get_cog("Flair").get_emoji("Resin")} 160', value='\u200b')
+                else:
+                    current_resin = self.get_current_resin(resin.timestamp, resin.resin)
+                    embed.add_field(name= f'{self.bot.get_cog("Flair").get_emoji("Resin")} {current_resin}', value='\u200b')
+                embed.set_footer(text=f'Max Resin At: {display_time}')
+        
+        await ctx.send(embed=embed)
 
     @commands.command()
-    async def setresin(self, ctx, resin: int):
+    async def setresin(self, ctx, resin):
         """Sets current resin value"""
+
+        # Verify resin value
         error = self.verify_resin(resin)
         if error is not None:
             await ctx.send(f'{error}')
             return
-        self.set_current_resin(ctx.author.id, resin)
-        additional_msg = ''
-        reminders = self.bot.get_cog('Reminders')
-        resin_reminder = [r for r in reminders.get_all_reminders(ctx.author) if r.r_type == 'Resin']
-        if resin_reminder:
-            new_max_time = self.get_max_resin_time(datetime.utcnow(), resin)
-            r = resin_reminder[0]
-            r.update_time(new_max_time)
-            additional_msg = ' Resin reminder found, readjusted to '+ r.get_display_time()
-            reminders.sort_reminders()
-        await ctx.send(f'Resin value set to {resin}.{additional_msg}')
 
+        message = ''
+        if ctx.guild:
+            server_region = ctx.guild.region.name
+        else:
+            server_region = 'GMT'
+        resin = int(resin)
 
-    def set_current_resin(self, member_id, current_resin: int):
-        self._resin_list[member_id] = {
-            'resin': current_resin,
-            'time': datetime.utcnow()
-            }
+        with session_scope() as s:
+            # check for existing resin
+            r = s.query(resinmodel).filter_by(discord_id=ctx.author.id).first()
+            now = datetime.utcnow()
+            max_resin_time = self.get_max_resin_time(now, resin)
+            display_time = self.convert_from_utc(max_resin_time, server_region).strftime("%I:%M %p, %d %b %Y")
+            if r:
+                r.resin = resin
+                r.timestamp = now
+                message += f'Current resin changed to {self.bot.get_cog("Flair").get_emoji("Resin")} {resin}'
+                # check for existing reminder
+                reminder = s.query(Reminder).filter_by(discord_id=ctx.author.id, typing='Max Resin').first()
+                if reminder:
+                    reminder.when=max_resin_time
+                    reminder.timezone=server_region
+                    reminder.channel=ctx.channel.id
+                    message += f"\nI've also adjusted your 'Max Resin' reminder to {display_time}"
+            else:
+                # set new entry
+                r = resinmodel(
+                    discord_id=ctx.author.id,
+                    resin=resin,
+                    timestamp=datetime.utcnow()
+                )
+                s.add(r)
+                message += f'Current resin set to {self.bot.get_cog("Flair").get_emoji("Resin")} {resin}\nResin will be full at {display_time}'
+
+        self.bot.get_cog('Reminders')._get_next_reminder()
+        
+        await ctx.send(message)
 
     def get_current_resin(self, time, resin: int):
         resin_since = (datetime.utcnow() - time).seconds/(self.resin_rate*60)
-        return resin+resin_since
+        return math.floor(resin+resin_since)
 
     def clear_resin(self, member_id):
         del self._resin_list[member_id]
@@ -82,3 +117,7 @@ class Resin(commands.Cog):
                 return 'Max resin value is 160'
         except:
             return f'"{resin}" is not a valid resin value'
+
+    def convert_from_utc(self, time, server_region):
+        reminder_cog = self.bot.get_cog('Reminders')
+        return reminder_cog.convert_from_utc(time, server_region)
