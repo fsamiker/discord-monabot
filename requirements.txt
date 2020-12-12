@@ -10,3 +10,12 @@ typing-extensions==3.7.4.3
 yarl==1.5.1
 pytz==2020.4
 Pillow==8.0.1
+alembic==1.4.3
+Mako==1.1.3
+MarkupSafe==1.1.1
+psycopg2==2.8.6
+python-dateutil==2.8.1
+python-editor==1.0.4
+six==1.15.0
+SQLAlchemy==1.3.20
+texttable==1.6.3

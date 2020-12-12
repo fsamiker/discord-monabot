@@ -5,7 +5,6 @@ class Material(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-
         self.materials = self.bot.get_cog('Character').materials
 
     @commands.command()
@@ -13,15 +12,16 @@ class Material(commands.Cog):
         """Get Material Details"""
 
         async def usage(message):
-            examples = '''```Command: character <material name>
+            examples = '''```Command: material <material name>
 
 Example Usage:
-\u2022 m! dandelion seed
-\u2022 m! sharp arrowhead```'''
+\u2022 m!material dandelion seed
+\u2022 m!material sharp arrowhead```'''
             await ctx.send(f'{message}\n{examples}')
 
         if any([type(w)!=str for w in args]):
             await usage('Invalid command')
+            return
 
         material_name = ' '.join([w.capitalize() for w in args])
         if material_name not in self.materials.keys():
