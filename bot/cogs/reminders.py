@@ -196,7 +196,7 @@ Example Usage:
                 embed.set_footer(text=f'*Times are in {server_region.capitalize()} timezone')
                 for r in reminders:
                     display_time = self.convert_from_utc(r.when, server_region).strftime("%I:%M %p, %d %b %Y")
-                    embed.add_field(name=f'{r.typing}', value=f'Time: {display_time}\nID: {r.id}', inline=True)
+                    embed.add_field(name=f'{r.typing}', value=f'{display_time}\nID: {r.id}', inline=True)
             else:
                 embed.description = 'No reminders found.\nYou can set reminders using m!remindme command'
         
