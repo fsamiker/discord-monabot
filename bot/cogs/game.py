@@ -334,7 +334,7 @@ class Game(commands.Cog, name='DiscordFun'):
                 
     @commands.command()
     async def primolvlup(self, ctx):
-        """Spend 1000 primogems for an instant lvlup"""
+        """Spend 3000 primogems for an instant lvlup"""
         cost = 3000
         flair = self.bot.get_cog("Flair")
         with session_scope() as s:
@@ -345,7 +345,7 @@ class Game(commands.Cog, name='DiscordFun'):
             if user.primogems < cost:
                 await ctx.send(f'You do not have enough primogems. {flair.get_emoji("Primogem")} 1000 needed for instant lvlup')
                 return
-            user.primogems -= 1000
+            user.primogems -= 3000
             user.exp = user.max_exp
             user = self.check_user_status(user)
             await ctx.send(f'{ctx.author.display_name} spent {flair.get_emoji("Primogem")} 1000 and leveled up!')
