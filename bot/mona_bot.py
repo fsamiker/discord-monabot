@@ -3,41 +3,49 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from bot.cogs.errors import ErrorHandler
-from bot.cogs.resin import Resin
-from bot.cogs.reminders import Reminders
-from bot.cogs.greetings import Greetings
-from bot.cogs.admin import Admin
-from bot.cogs.core import Core
-from bot.cogs.character import Character
-from bot.cogs.misc import Misc
-from bot.cogs.emoji import Emoji
-from bot.cogs.material import Material
-from bot.utils.image_processor import ImageProcessor
+from bot.cogs.resin import Resin as ResinCog
+from bot.cogs.reminders import Reminders as RemindersCog
+from bot.cogs.greetings import Greetings as GreetingsCog
+from bot.cogs.talent import Talents as TalentCog
+from bot.cogs.material import Materials as MaterialCog
+from bot.cogs.flair import Flair as FlairCog
+from bot.cogs.game import Game as GameCog
+from bot.cogs.core import Core as CoreCog
+from bot.cogs.admin import Admin as AdminCog
+from bot.cogs.character import Characters as CharacterCog
 
 import os
 
 from dotenv import load_dotenv
 from discord.ext import commands
+import discord
+
+from data.db import *
+from data.genshin.models import *
+from data.monabot.models import *
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 ADMIN_ID = os.getenv('ADMIN_ID')
 
 # Initiate bot
+intents = discord.Intents.default()
+intents.members = True
+intents.guilds=True
 bot = commands.Bot(command_prefix='m!')
-im_proc = ImageProcessor()
 
 # Add cog modules
-bot.add_cog(Core(bot, im_proc))
-bot.add_cog(Greetings(bot))
-bot.add_cog(Reminders(bot))
-bot.add_cog(Resin(bot))
-bot.add_cog(ErrorHandler(bot))
-bot.add_cog(Admin(bot, ADMIN_ID))
-bot.add_cog(Character(bot, im_proc))
-bot.add_cog(Misc(bot))
-bot.add_cog(Emoji(bot))
-bot.add_cog(Material(bot))
+bot.add_cog(CoreCog(bot))
+bot.add_cog(GreetingsCog(bot))
+bot.add_cog(RemindersCog(bot))
+bot.add_cog(ResinCog(bot))
+bot.add_cog(AdminCog(bot, ADMIN_ID))
+bot.add_cog(CharacterCog(bot))
+bot.add_cog(GameCog(bot))
+bot.add_cog(FlairCog(bot))
+bot.add_cog(MaterialCog(bot))
+bot.add_cog(TalentCog(bot))
+bot.add_cog(ErrorHandler)
 
 # Run Bot
 bot.run(TOKEN)

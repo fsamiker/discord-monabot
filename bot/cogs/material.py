@@ -1,4 +1,4 @@
-from data.genshin.models import Material
+from data.genshin.models import Food, Material
 from data.db import session_scope
 from discord.ext import commands
 import discord
@@ -31,6 +31,28 @@ Example Usage:
             else:
                 await ctx.send(f'Could not find material "{material_name}"')
 
+    @commands.command()
+    async def food(self, ctx, *args):
+        """Get Food Details"""
+
+        async def usage(message):
+            examples = '''```Command: material <material name>
+
+Example Usage:
+\u2022 m!material apple
+\u2022 m!material mysterious bolognese```'''
+            await ctx.send(f'{message}\n{examples}')
+
+        food_name = ' '.join([w.capitalize() for w in args])
+        with session_scope() as s:
+            f = s.query(Food).filter_by(name=food_name).first()
+            if f:
+                file = discord.File(f.icon_url, filename='image.png')
+                embed = self.get_food_basic_info_embed(f)
+                await ctx.send(file=file, embed=embed)
+            else:
+                await ctx.send(f'Could not find food "{food_name}"')
+
     def get_material_basic_info_embed(self, material):
         desc = ''
         if material.rarity:
@@ -50,4 +72,19 @@ Example Usage:
         embed.set_thumbnail(url='attachment://image.png')
         embed.add_field(name='How to Obtain', value=obtain, inline=False)
         embed.set_footer(text=f'{material.typing}')
+        return embed
+
+    def get_food_basic_info_embed(self, food):
+        desc = ''
+        if food.rarity:
+            for _ in range(food.rarity):
+                desc += f'{self.bot.get_cog("Flair").get_emoji("Star")}'
+        desc += f'\n\n{food.description}'
+
+        embed = discord.Embed(title=f'{food.name}', description=f'{desc}')
+        embed.set_thumbnail(url='attachment://image.png')
+        embed.add_field(name='Effect', value=food.effect, inline=False)
+        embed.add_field(name='Type', value=f'{food.typing}', inline=True)
+        if food.specialty_of:
+            embed.add_field(name='Specialty Of', value=f'{food.specialty_of.name}', inline=True)
         return embed

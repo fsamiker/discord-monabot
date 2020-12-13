@@ -1,10 +1,13 @@
-from data.genshin.models import Character
+from data.genshin.models import Character, CharacterLevel
 from data.db import session_scope
 from discord.ext import commands
 import discord
 import os
 
 class Characters(commands.Cog):
+
+    MAX_CHAR_LVL=90
+    MIN_CHAR_LVL=1
 
     def __init__(self, bot):
         self.bot = bot
@@ -56,15 +59,13 @@ Example Usage:
                 await ctx.send(file=icon_file, embed=embed)
 
     @commands.command()
-    async def ascensionmaterial(self, ctx, name: str, *args):
+    async def ascensionmaterial(self, ctx, name: str, starting_lvl=1, target_lvl=90):
         """Get Ascension Materials needed"""
 
         async def usage(message):
-            examples = '''```Command: ascensionmaterial <character name> optional:<start lvl> <end lvl> <option>          
+            examples = '''```Command: ascensionmaterial <character name> optional:<start lvl> <end lvl>          
 Start Lvl: Start counting from character level (Default:1)
 End Lvl: Stop counting at character level (Default:90)
-Options: \u2022 default - Text list
-         \u2022 image - Image Form
 
 Example Usage:
 \u2022 m!ascensionmaterial amber
@@ -72,149 +73,68 @@ Example Usage:
 \u2022 m!ascensionmaterial amber 45 87```'''
             await ctx.send(f'{message}\n{examples}')
 
-        # Check Inputs
-        character = self.characters.get(name.capitalize())
-        if character is None:
-            await self.unknown_character(name)
-            return
-
-        starting_lvl = 1  # Default value
-        target_lvl = 90  # Default value
-        option = 'default'  # Default value
-        if len(args) > 3:
+        name = name.title()
+        # Check inputs
+        try:
+            starting_lvl = int(starting_lvl)
+            target_lvl = int(target_lvl)
+        except:
             await usage('Invalid command')
             return
-        if len(args) >= 2:
-            try:
-                starting_lvl = int(args[0])
-                target_lvl = int(args[1])
-            except:
-                await usage('Invalid command')
-                return
-        if starting_lvl > target_lvl:
-            await usage('Starting Level cannot be higher than End Level')
-        if len(args) == 3 or len(args) == 1:
-            option = args[-1].lower()
-            if option not in ['image', 'default']:
-                await usage('Invalid options')
-                return
 
-        resources = character.get_ascension_resource(starting_lvl, target_lvl)
-        lvl_range =resources['Range']
-        if not lvl_range:
-            await ctx.send(f'There is no ascension available in the lvl range {starting_lvl} to {target_lvl}')
+        if starting_lvl > target_lvl or starting_lvl == target_lvl:
+            await usage('Target Level should be higher than Starting Level')
+            return
+        if target_lvl > self.MAX_CHAR_LVL:
+            await usage(f'Current character max level is {self.MAX_CHAR_LVL}')
+            return
+        if starting_lvl < self.MIN_CHAR_LVL:
+            await usage(f'Hey! Are you awake? Character levels start at {self.MIN_CHAR_LVL}')
             return
 
-        if len(lvl_range) == 1:
-            output_file = f'assets/genshin/generated/CA_{lvl_range[0]}_{character.name}.png'
-            title = f'{character.name} - Ascension Materials'
-            footer = f'\nLevel: {lvl_range[0]}'
-        else:
-            output_file = f'assets/genshin/generated/CA_{lvl_range[0]}_{lvl_range[1]}_{character.name}.png'
-            title = f'{character.name} - Ascension Materials'
-            footer = f'\nLevel: {lvl_range[0]} to {lvl_range[1]}'
+        with session_scope() as s:
+            char = s.query(Character).filter_by(name=name).first()
+            if char is None:
+                await self.unknown_character(ctx, name)
+                return
+            asc_list = s.query(CharacterLevel).\
+                filter(CharacterLevel.character_id==char.id, CharacterLevel.level>=starting_lvl, CharacterLevel.level <=target_lvl).\
+                    order_by(CharacterLevel.level.asc()).all()
 
-        icon = character.get_icon()
-        embed = self.get_material_embed(title, resources, footer)
-        if option.lower() == 'default':
-            file = discord.File(icon, filename='image.png')
+            if not asc_list:
+                await ctx.send(f'There is no ascension available in the lvl range {starting_lvl} to {target_lvl}')
+                return
+
+            if len(asc_list) == 1:
+                footer = f'\nLevel: {asc_list[0].level}'
+            else:
+                footer = f'\nLevel: {asc_list[0].level} to {asc_list[-1].level}'
+
+            embed = self.get_material_embed(f'{char.name} - Ascension Materials', asc_list, footer, self.bot.get_cog("Flair").get_element_color(char.element))
+            file = discord.File(char.icon_url, filename='image.png')
             await ctx.send(file=file, embed=embed)
             return
-
-        elif option.lower() == 'image':
-            icon = character.get_icon()
-
-            if os.path.isfile(output_file):
-                await ctx.send('These are the materials needed...',file=discord.File(output_file))
-            else:
-                await ctx.send(f'Hold on. Collecting research on {name}...')
-                await self.generate_material_info(icon, title, resources, output_file)
-                await ctx.send('These are the materials needed...',file=discord.File(output_file))
-
-    @commands.command()
-    async def talentmaterial(self, ctx, name: str, *args):
-        """Get Talent Materials needed"""
-
-        async def usage(message):
-            examples = '''```Command: talentmaterial <character name> optional:<start lvl> <end lvl> <option>          
-Start Lvl: Start counting from talent level (Default:1)
-End Lvl: Stop counting at talent level (Default:15)
-Options: \u2022 default - Text list
-         \u2022 image - Image Form
-
-Example Usage:
-\u2022 m!talentmaterial amber
-\u2022 m!talentmaterial amber 2 15
-\u2022 m!talentmaterial amber 1 10```'''
-            await ctx.send(f'{message}\n{examples}')
-
-        # Check Inputs
-        character = self.characters.get(name.capitalize())
-        if character is None:
-            await self.unknown_character(name)
-            return
-
-        starting_lvl = 1  # Default value
-        target_lvl = 15  # Default value
-        option = 'default'  # Default value
-        if len(args) > 3:
-            await usage('Invalid command')
-            return
-        if len(args) >= 2:
-            try:
-                starting_lvl = int(args[0])
-                target_lvl = int(args[1])
-            except:
-                await usage('Invalid command')
-                return
-        if starting_lvl > target_lvl:
-            await usage('Starting Level cannot be higher than End Level')
-        if len(args) == 3 or len(args) == 1:
-            option = args[-1].lower()
-            if option not in ['image', 'default']:
-                await usage('Invalid command')
-                return
-
-        # Collect Data
-        resources = character.get_talent_resource(self.skills, starting_lvl, target_lvl)
-        lvl_range =resources['Range']
-        if not lvl_range:
-            await usage(f'Talent lvls only go up to 10. (15 including some constellations)')
-            return
-
-        if len(lvl_range) == 1:
-            output_file = f'assets/genshin/generated/CTM_{lvl_range[0]}_{character.name}.png'
-            title = f'{character.name} - Talent Materials'
-            footer = f'\nLevel: {lvl_range[0]}'
-        else:
-            output_file = f'assets/genshin/generated/CTM_{lvl_range[0]}_{lvl_range[1]}_{character.name}.png'
-            title = f'{character.name} - Talent Materials'
-            footer = f'\nLevel: {lvl_range[0]} to {lvl_range[1]}'
-
-        icon = character.get_icon()
-        embed = self.get_material_embed(title, resources, footer)
-        if option.lower() == 'default':
-            file = discord.File(icon, filename='image.png')
-            await ctx.send(file=file, embed=embed)
-            return
-        elif option.lower() == 'image':
-            if os.path.isfile(output_file):
-                await ctx.send('These are the materials needed...',file=discord.File(output_file))
-            else:
-                await ctx.send(f'Hold on. Collecting research on {character.name}...')
-                await self.generate_material_info(icon, title, resources, output_file)
-                await ctx.send(f'These are the materials needed...',file=discord.File(output_file))
 
     async def unknown_character(self, ctx, name):
         await ctx.send(f'"{name}" does not seem to be a known character in Tevyat')
 
-    def get_material_embed(self, title, resources, footer):
-        emojis = self.bot.get_cog('Emoji').emojis
-        embed = discord.Embed(title=f'{title}', description=f'{emojis.get("Mora")} {resources["Mora"]}')
+    def get_material_embed(self, title, ascension_list, footer, color):
+        mora = sum([a.cost for a in ascension_list])
+        embed = discord.Embed(title=f'{title}',
+         description=f'\n{self.bot.get_cog("Flair").get_emoji("Mora")} {mora}',
+         color=color)
         embed.set_thumbnail(url='attachment://image.png')
         embed.set_footer(text=footer)
         i = 0
-        for mat, count in resources["Materials"].items():
+        materials = {}
+        for a in ascension_list:
+            for m in a.materials:
+                if m.material.name in materials.keys():
+                    materials[m.material.name] += m.count
+                else:
+                    materials[m.material.name] = m.count
+
+        for mat, count in materials.items():
             embed.add_field(name=mat, value=f'x{count}', inline=True)
             i += 1
 
@@ -237,21 +157,22 @@ Example Usage:
         embed.add_field(name='Region', value=character.region)
         embed.add_field(name='Birthday', value=character.birthday)
         embed.add_field(name='Affiliation', value=character.affiliation)
-        embed.add_field(name='Special Dish', value=character.special_dish)
+        embed.add_field(name='Special Dish', value=character.special_dish.name)
         embed.add_field(name='\u200b', value='\u200b')
         return embed
 
     def get_talents_embed(self, talents, character):
         embed = discord.Embed(title=f'{self.bot.get_cog("Flair").get_emoji(character.element)} {character.name} - Talent List',
-        color=self.bot.get_cog("Flair").get_element_color(character.element))
+        color=self.bot.get_cog("Flair").get_element_color(character.element),
+        description=f"These are {character.name}'s talents\nFor further information run m!talent <talent name>")
         embed.add_field(name='Name', value=f'{talents[0].name}', inline=True)
         embed.add_field(name='Type', value=f'{talents[0].typing.replace("Talent", "")}', inline=True)
-        embed.add_field(name='Description', value=f'{talents[0].description}', inline=True)
+        embed.add_field(name='\u200b', value='\u200b', inline=True)
 
         for t in talents[1:]:
             embed.add_field(name='\u200b', value=f'{t.name}', inline=True)
             embed.add_field(name='\u200b', value=f'{t.typing.replace("Talent", "")}', inline=True)
-            embed.add_field(name='\u200b', value=f'{t.description}', inline=True)
+            embed.add_field(name='\u200b', value='\u200b', inline=True)
 
         embed.set_thumbnail(url='attachment://image.png')
         return embed

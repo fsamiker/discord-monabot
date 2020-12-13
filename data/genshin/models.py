@@ -33,7 +33,7 @@ class Character(Base):
     region = Column(String)
     birthday = Column(String)
     affiliation = Column(String, default='Unknown')
-    special_dish = Column(String, default='Unknown')
+    special_dish = relationship("Food", uselist=False, back_populates="specialty_of")
     obtain_str = Column(String, default='Unknown')
     talents = relationship("Talent", back_populates="character")
     constellations = relationship("Constellation", back_populates="character")
@@ -124,3 +124,15 @@ class Constellation(Base):
 
     def __repr__(self):
         return f'<{self.character.name} constellation C{self.level}: {self.name}>'
+
+class Food(Base):
+    __tablename__= 'foods'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    icon_url = Column(String)
+    rarity = Column(Integer)
+    typing = Column(String)
+    description = Column(String)
+    effect = Column(String)
+    character_id = Column(Integer, ForeignKey('characters.id'))
+    specialty_of = relationship("Character", uselist=False, back_populates="special_dish")

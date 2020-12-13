@@ -5,11 +5,11 @@ class Flair(commands.Cog):
 
     element_colors = {
         'Pyro': discord.Colour.red(),
-        'Cyro': discord.Colour.dark_blue(),
+        'Cryo': discord.Colour.greyple(),
         'Anemo': discord.Colour.teal(),
         'Hydro': discord.Colour.blue(),
         'Electro': discord.Colour.purple(),
-        'Geo': discord.Colour.dark_orange()
+        'Geo': discord.Colour.gold()
     }
 
     def __init__(self, bot):
@@ -26,7 +26,7 @@ class Flair(commands.Cog):
         self.emojis['Hydro'] = self.bot.get_emoji(786073653879373895)
         self.emojis['Pyro'] = self.bot.get_emoji(786073580629655612)
         self.emojis['Geo'] = self.bot.get_emoji(786073540251222037)
-        self.emojis['Cyro'] = self.bot.get_emoji(786073446730694696)
+        self.emojis['Cryo'] = self.bot.get_emoji(786073446730694696)
         self.emojis['Anemo'] = self.bot.get_emoji(786072181384937502)
         self.emojis['Tartaglia'] = self.bot.get_emoji(786074538835705857)
         self.emojis['Sucrose'] = self.bot.get_emoji(786074517285634060)
@@ -48,6 +48,10 @@ class Flair(commands.Cog):
         self.emojis['Beidou'] = self.bot.get_emoji(786074158739619851)
         self.emojis['Barbara'] = self.bot.get_emoji(786074128502489099)
         self.emojis['Amber'] = self.bot.get_emoji(786074070650322986)
+        self.emojis['Zhongli'] = self.bot.get_emoji(787664573565501470)
+        self.emojis['Xingqiu'] = self.bot.get_emoji(787664923818852352)
+        self.emojis['Xiangling'] = self.bot.get_emoji(787664876675268618)
+        self.emojis['Venti'] = self.bot.get_emoji(787664848380493834)
 
     def get_element_color(self, element):
         return self.element_colors.get(element, discord.Colour.dark_theme())
