@@ -26,6 +26,7 @@ class Flair(commands.Cog):
         self.emojis['Hydro'] = self.bot.get_emoji(786073653879373895)
         self.emojis['Pyro'] = self.bot.get_emoji(786073580629655612)
         self.emojis['Geo'] = self.bot.get_emoji(786073540251222037)
+        self.emojis['Electro'] = self.bot.get_emoji(787707576640733224)
         self.emojis['Cryo'] = self.bot.get_emoji(786073446730694696)
         self.emojis['Anemo'] = self.bot.get_emoji(786072181384937502)
         self.emojis['Tartaglia'] = self.bot.get_emoji(786074538835705857)

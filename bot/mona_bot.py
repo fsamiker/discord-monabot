@@ -45,6 +45,7 @@ bot.add_cog(GameCog(bot))
 bot.add_cog(FlairCog(bot))
 bot.add_cog(MaterialCog(bot))
 bot.add_cog(TalentCog(bot))
+bot.add_cog(ErrorHandler(bot))
 
 # Run Bot
 bot.run(TOKEN)
