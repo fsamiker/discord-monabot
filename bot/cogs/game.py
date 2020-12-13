@@ -23,10 +23,10 @@ class Game(commands.Cog, name='DiscordFun'):
     TRIP_DAMAGE = 25
     RESPAWN_TIME = 1  # Hours
     PRIMO_CLAIM_RATE = 24  # Hours
-    PRIMO_CLAIM_VALUE = 160
+    PRIMO_CLAIM_VALUE = 300
     PRIMO_BONUS_CHANCE = 10
     PRIMO_BONUS_MULTIPLIER = 10
-    STEAL_CHANCE = 25
+    STEAL_CHANCE = 20
     STEAL_CAUGHT_CHANCE = 5
     MAX_HEAL_CHANCE = 35
     HEAL_MULTIPLIER = 750
@@ -273,7 +273,7 @@ class Game(commands.Cog, name='DiscordFun'):
             if not user:
                 await self.no_profile(ctx)
                 return
-            if not user.last_claim or user.last_claim+timedelta(hours=self.PRIMO_CLAIM_RATE) > now:
+            if not user.last_claim or user.last_claim+timedelta(hours=self.PRIMO_CLAIM_RATE) < now:
                 msg = ''
                 luck = random.randint(0, 100)
                 primo = self.PRIMO_CLAIM_VALUE
@@ -318,9 +318,10 @@ class Game(commands.Cog, name='DiscordFun'):
                     s.delete(random_char[0])
                     return
             if chance <= self.STEAL_CHANCE*self.bonus_rate(user):
-                if target_user.primogems > 1000:
-                    target_user.primogems -= 1000
-                    user.primogems += 1000
+                steal_amount = random.randint(500, 1000)
+                if target_user.primogems > steal_amount:
+                    target_user.primogems -= steal_amount
+                    user.primogems += steal_amount
                     stole = f'{flair.get_emoji("Primogem")} 1000'
                 else:
                     stole = f'{flair.get_emoji("Primogem")} {target_user.primogems}'
@@ -334,7 +335,7 @@ class Game(commands.Cog, name='DiscordFun'):
     @commands.command()
     async def primolvlup(self, ctx):
         """Spend 1000 primogems for an instant lvlup"""
-        cost = 1000
+        cost = 3000
         flair = self.bot.get_cog("Flair")
         with session_scope() as s:
             user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
