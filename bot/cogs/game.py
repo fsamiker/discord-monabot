@@ -463,11 +463,23 @@ class Game(commands.Cog, name='DiscordFun'):
             )
             embed.add_field(name=f'{flair.get_emoji("Primogem")} Primogems', value=user.primogems)
             embed.add_field(name='Active Character', value=f'{flair.get_emoji(active_char.character.name)} {active_char.character.name} C{active_char.constellation}')
+            embed.add_field(name='\u200b', value='\u200b')
             if bench_char:
-                bench = ''
+                bench1 = ''
+                bench2 = ''
+                bench3 = ''
+                i = 1
                 for c in bench_char:
-                    bench += f'\n{flair.get_emoji(c.character.name)} {c.character.name} C{c.constellation}'
-                embed.add_field(name='Bench Characters', value=bench.strip(), inline=False)
+                    if i ==1:
+                        bench1 += f'\n{flair.get_emoji(c.character.name)} {c.character.name} C{c.constellation}'
+                    if i ==2:
+                        bench2 += f'\n{flair.get_emoji(c.character.name)} {c.character.name} C{c.constellation}'
+                    if i ==3:
+                        bench3 += f'\n{flair.get_emoji(c.character.name)} {c.character.name} C{c.constellation}'
+                    i = i%3+1
+                embed.add_field(name='Bench Characters', value=bench1.strip(), inline=True)
+                embed.add_field(name='\u200b', value=bench2.strip(), inline=True)
+                embed.add_field(name='\u200b', value=bench3.strip(), inline=True)
             embed.set_thumbnail(url=member.avatar_url)
         await ctx.send(embed=embed)
 
