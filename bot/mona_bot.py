@@ -32,7 +32,7 @@ ADMIN_ID = os.getenv('ADMIN_ID')
 intents = discord.Intents.default()
 intents.members = True
 intents.guilds=True
-bot = commands.Bot(command_prefix='m!')
+bot = commands.Bot(command_prefix='m!', intents=intents)
 
 # Add cog modules
 bot.add_cog(CoreCog(bot))
