@@ -348,7 +348,7 @@ class Game(commands.Cog, name='DiscordFun'):
             user.primogems -= 3000
             user.exp = user.max_exp
             user = self.check_user_status(user)
-            await ctx.send(f'{ctx.author.display_name} spent {flair.get_emoji("Primogem")} 1000 and leveled up!')
+            await ctx.send(f'{ctx.author.display_name} spent {flair.get_emoji("Primogem")} 3000 and leveled up!')
             return
 
     @commands.command()
