@@ -49,14 +49,13 @@ class Game(commands.Cog, name='DiscordFun'):
     @commands.Cog.listener()
     async def on_ready(self):
         print('Warming up Game Server...')
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.weather_engine())
+        self.bot.loop.create_task(self.weather_engine())
 
     async def weather_engine(self):
         print('Starting the Weather Engine!')
         while self._enable_weather:
             n = random.randint(0, 100)
-            if n <= 99:
+            if n <= 20:
                 #Special weather
                 weathers = ['Pyro', 'Cryo', 'Geo', 'Hydro', 'Anemo','Electro']
                 w = random.randint(0, len(weathers)-1)
