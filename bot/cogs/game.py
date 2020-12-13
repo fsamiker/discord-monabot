@@ -14,11 +14,11 @@ class Game(commands.Cog, name='DiscordFun'):
     EXP_MULTIPLIER = 100
     HP_MULTIPLIER = 1500
     STAMINA_INCREMENT = 20
-    REGEN_RATE = 60  # Seconds
+    REGEN_RATE = 3600  # Seconds
     STAMINA_REGEN = 7
     HEALTH_REGEN = 10
     MAX_DMG_MULTIPLIER = 750
-    CRIT_CHANCE = 20
+    CRIT_CHANCE = 18
     TRIP_CHANCE = 5
     TRIP_DAMAGE = 25
     RESPAWN_TIME = 1  # Hours
@@ -112,6 +112,10 @@ class Game(commands.Cog, name='DiscordFun'):
         if not member:
             member = ctx.author
 
+        check = await self.check_member_is_mona(ctx, member)
+        if check:
+            return
+
         with session_scope() as s:
             user = s.query(GameProfile).filter_by(discord_id=member.id).first()
             if not user:
@@ -156,7 +160,7 @@ class Game(commands.Cog, name='DiscordFun'):
             food_n = 0
             for i in range(n):
                 roll = random.randint(0, 100)
-                if user.pity==10 or roll >= 95:
+                if user.pity==10 or roll >= 92:
                     user.pity=0
                     char_n +=1
                 else:
@@ -216,6 +220,10 @@ class Game(commands.Cog, name='DiscordFun'):
             server_region = ctx.guild.region.name
         else:
             server_region = 'GMT'
+
+        check = await self.check_member_is_mona(ctx, target)
+        if check:
+            return
         
         with session_scope() as s:
             user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
@@ -233,12 +241,19 @@ class Game(commands.Cog, name='DiscordFun'):
             user.stamina -= cost
             # Calculate Damage
             crit = random.randint(0, 100)
-            dmg = int(random.randint(10,user.level*self.MAX_DMG_MULTIPLIER)*self.bonus_rate(user))
-            # Trip chance
+            dmg = int(random.randint(50*user.level,user.level*self.MAX_DMG_MULTIPLIER)*self.bonus_rate(user))
+            msg = ''
+            # Unfortunate chance
             if crit <=self.TRIP_CHANCE:
-                self_dmg = user.level*self.TRIP_DAMAGE
-                user.health -= self_dmg
-                msg = f'Oops! {ctx.author.display_name} tripped on a Cor Lapis and took {user.level*self.TRIP_DAMAGE} damage'
+                # Rex Lapis chance
+                if (user.level-target_user.level) > 3:
+                    user.health = 0
+                    msg += 'Morax did not take kindly to you picking on the weak. You have been struck by earth from above!'
+                # Trip chance
+                else:
+                    self_dmg = user.level*self.TRIP_DAMAGE
+                    user.health -= self_dmg
+                    msg += f'Oops! {ctx.author.display_name} tripped on a Cor Lapis and took {user.level*self.TRIP_DAMAGE} damage'
                 user = self.check_death(user)
                 if not user.health:
                     respawn_time = self.convert_from_utc(user.deathtime, server_region).strftime("%I:%M %p, %d %b %Y")
@@ -249,13 +264,16 @@ class Game(commands.Cog, name='DiscordFun'):
             
             msg = ''
             if crit <= self.CRIT_CHANCE:
-                dmg = user.level*self.MAX_DMG_MULTIPLIER*2
+                dmg = dmg*2
                 msg += 'A Critical Hit!\n'
+            if (target_user.level-user.level) > 3:
+                dmg = dmg*(user.level+1)
+                msg += 'You seem to have found his weak point! Insane Damage!'
             target_user.health -= dmg
             msg += f'\n{ctx.author.display_name} dealt {dmg} damage to {target.display_name}!'
             target_user = self.check_death(target_user)
             if not target_user.health:
-                user.exp += 100
+                user.exp += 100*target.level
                 respawn_time = self.convert_from_utc(target.deathtime, server_region).strftime("%I:%M %p, %d %b %Y")
                 msg += f'\n{ctx.author.display_name} defeated {target.display_name} and gained 100 exp!\n{target.display_name} will respawn at {respawn_time}'
                 if user.exp >= user.max_exp:
@@ -293,6 +311,10 @@ class Game(commands.Cog, name='DiscordFun'):
         """Attempt to steal primogems from another player. Stamina Cost: 20"""
         cost = 20
         flair = self.bot.get_cog("Flair")
+
+        check = await self.check_member_is_mona(ctx, target)
+        if check:
+            return
 
         with session_scope() as s:
             user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
@@ -456,7 +478,7 @@ class Game(commands.Cog, name='DiscordFun'):
     def check_user_status(self, user):
         now = datetime.utcnow()
         # check stamina
-        if user.last_check+timedelta(seconds=self.REGEN_RATE) > now:
+        if user.last_check+timedelta(seconds=self.REGEN_RATE) <= now:
             stamina_gain = int(((now-user.last_check).seconds/self.REGEN_RATE*self.STAMINA_REGEN)+user.level)
             user.stamina += stamina_gain
             health_gain = int((now-user.last_check).seconds/self.REGEN_RATE*self.HEALTH_REGEN*user.level)
@@ -467,7 +489,7 @@ class Game(commands.Cog, name='DiscordFun'):
                 user.health = user.max_health
             user.last_check=now
         # check level up
-        if user.exp >= user.max_exp:
+        while user.exp >= user.max_exp:
             user.level += 1
             user.exp = user.exp-user.max_exp
             user.max_exp=user.level*self.EXP_MULTIPLIER
@@ -492,8 +514,13 @@ class Game(commands.Cog, name='DiscordFun'):
                 element=c.character.element
                 constellation = c.constellation
                 break
-        constellation_bonus = (1-constellation)*0.2
+        constellation_bonus = (1-constellation)*0.3
         if element.lower() == self._todays_weather.lower():
             return self.WEATHER_MULTIPLIER+constellation_bonus
         else:
             return 1+constellation_bonus
+
+    async def check_member_is_mona(self, ctx, member):
+        if member == self.bot.user:
+            await ctx.send('Do you think I have time for your silly games? Go bother someone else!')
+            return True
