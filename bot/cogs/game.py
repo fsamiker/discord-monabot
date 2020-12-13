@@ -446,7 +446,7 @@ class Game(commands.Cog, name='DiscordFun'):
                 for c in bench_char:
                     bench += f'\n{flair.get_emoji(c.character.name)} {c.character.name} C{c.constellation}'
                 embed.add_field(name='Bench Characters', value=bench.strip(), inline=False)
-            embed.set_thumbnail(url=ctx.author.avatar_url)
+            embed.set_thumbnail(url=member.avatar_url)
         await ctx.send(embed=embed)
 
     def convert_from_utc(self, time, server_region):
