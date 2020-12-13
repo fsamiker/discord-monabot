@@ -1,7 +1,7 @@
 import discord
 from data.monabot.models import Reminder, Resin
 from data.db import session_scope
-from datetime import datetime
+from datetime import datetime, timedelta
 from discord.ext import commands
 import asyncio
 import json
@@ -68,9 +68,13 @@ class Reminders(commands.Cog):
         async def usage(message):
             examples = '''```Command: remindme <option> <values>         
 Options: \u2022 resin - Max Resin reminder. Value = current resin value
+         \u2022 specialty - Local Specialty reminder
+         \u2022 mineral - Mineral Mining reminder
 
 Example Usage:
-\u2022 m!remindme resin 50```'''
+\u2022 m!remindme resin 50
+\u2022 m!remindme specialty
+\u2022 m!remindme mineral```'''
             await ctx.send(f'{message}\n{examples}')
 
         option = args[0].lower()
@@ -80,7 +84,7 @@ Example Usage:
             server_region = 'GMT'
         message = ''
 
-        if option not in ['resin']:
+        if option not in ['resin', 'specialty', 'mineral']:
             await usage('Invalid option')
             return
 
@@ -134,7 +138,43 @@ Example Usage:
                     s.add(r)
                     message += f'Max Resin {self.bot.get_cog("Flair").get_emoji("Resin")} reminder set for {display_time}'
 
-            self._get_next_reminder()
+        if option in ['specialty', 'mineral']:
+            # validate specialty input
+            if len(args) != 1:
+                await usage('Invalid Command')
+                return
+            if option == 'specialty':
+                days=2
+                typing = 'Local Specialty Respawn'
+                r_msg = f'Your local specialties have respawned!'
+            elif option == 'mineral':
+                days=3
+                typing = 'Mineral Respawn'
+                r_msg = f'Your minerals have respawned!'
+            with session_scope() as s:
+                now = datetime.utcnow()+timedelta(days=days)
+                display_time = self.convert_from_utc(now, server_region).strftime("%I:%M %p, %d %b %Y")
+                # Check existing reminder
+                r = s.query(Reminder).filter_by(discord_id=ctx.author.id, typing=typing).first()
+                if r:
+                    r.when = now
+                    r.timezone = server_region
+                    r.channel = ctx.channel.id
+                    message += f'Existing reminder found, updated to {display_time}'
+                # Create new reminder
+                else:
+                    r = Reminder(
+                        discord_id=ctx.author.id,
+                        when=now,
+                        channel=ctx.channel.id,
+                        message=r_msg,
+                        typing=typing,
+                        timezone=server_region
+                    )
+                    s.add(r)
+                    message += f'{typing} reminder set for {display_time}'
+
+        self._get_next_reminder()
 
         await ctx.send(message)
 
