@@ -259,7 +259,7 @@ class Game(commands.Cog, name='DiscordFun'):
                     msg += f'Oops! {ctx.author.display_name} tripped on a Cor Lapis and took {user.level*self.TRIP_DAMAGE} damage'
                 user = self.check_death(user)
                 if not user.health:
-                    respawn_time = self.convert_from_utc(user.deathtime, server_region).strftime("%I:%M %p, %d %b %Y")
+                    respawn_time = self.get_respawn_time(ctx, user)
                     msg += f'\n{user.display_name} died. Respawning at {respawn_time}'
                 msg += f'\n{target.display_name} laughed and got away unscathed'
                 await ctx.send(msg.strip())
@@ -277,7 +277,7 @@ class Game(commands.Cog, name='DiscordFun'):
             target_user = self.check_death(target_user)
             if not target_user.health:
                 user.exp += 100*target_user.level
-                respawn_time = self.convert_from_utc(target_user.deathtime, server_region).strftime("%I:%M %p, %d %b %Y")
+                respawn_time = self.get_respawn_time(ctx, target_user)
                 msg += f'\n{ctx.author.display_name} defeated {target.display_name} and gained 100 exp!\n{target.display_name} will respawn at {respawn_time}'
                 if user.exp >= user.max_exp:
                     msg += f'\n{ctx.author.display_name} Leveled up!'
@@ -442,13 +442,13 @@ class Game(commands.Cog, name='DiscordFun'):
 
     @commands.command()
     async def explore(self, ctx):
-        """You never know what you might find. Stamina Cost: 5"""
+        """You never know what you might find. Stamina Cost: 10"""
         if ctx.guild:
             server_region = ctx.guild.region.name
         else:
             server_region = 'GMT'
 
-        cost = 5
+        cost = 10
         with session_scope() as s:
             user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
             if not user:
@@ -492,30 +492,30 @@ class Game(commands.Cog, name='DiscordFun'):
                 user = self.check_death(user)
                 msg = f'{ctx.author.display_name} stepped on a buried bomb. Kaboom! {ctx.author.display_name} took {dmg} damage'
                 if user.deathtime:
-                    respawn_time = self.convert_from_utc(user.deathtime, server_region).strftime("%I:%M %p, %d %b %Y")
+                    respawn_time = self.get_respawn_time(ctx, user)
                     msg += f'\n{ctx.author.display_name} perished. Respawning at {respawn_time}'
                 await ctx.send(msg)
                 return
-            elif random_event >= 859:
+            elif random_event >= 759:
                 random_exp = random.randint(1, 50)
                 user.exp += random_exp
                 user = self.check_user_status(user)
                 await ctx.send(f'{ctx.author.display_name} found some hilichurls and took them out. Gained {random_exp} exp')
                 return
-            elif random_event >= 759:
+            elif random_event >= 559:
                 random_gems = random.randint(50, 100)
                 user.primogems += random_gems
                 await ctx.send(f'{ctx.author.display_name} stumbled on a buried common chest. {flair.get_emoji("Primogem")} {random_gems}')
                 return
-            elif random_event >= 749:
+            elif random_event >= 549:
                 user.health = user.max_health
                 await ctx.send(f'{ctx.author.display_name} passed a Statue of the Seven. Fully healed!')
                 return
-            elif random_event >= 739:
+            elif random_event >= 539:
                 dmg = int(user.health/2)+1
                 await ctx.send(f'{ctx.author.display_name} slipped and fell while climbing Mount Hulao\n{ctx.author.display_name} took {dmg} damage!')
                 return
-            elif random_event >= 729:
+            elif random_event >= 529:
                 stamina_increase = user.level*5
                 user.stamina += stamina_increase
                 if user.stamina > user.max_stamina:
@@ -551,7 +551,7 @@ class Game(commands.Cog, name='DiscordFun'):
             desc += f"\nStamina: {user.stamina}/{user.max_stamina}"
             desc += f"\nExp: {user.exp}/{user.max_exp}"
             if user.deathtime:
-                respawn = self.convert_from_utc(user.deathtime, server_region).strftime("%I:%M %p, %d %b %Y")
+                respawn = self.get_respawn_time(ctx, user)
                 desc+= f"\nRespawn Time: {respawn}"
             active_char = s.query(GameCharacter).filter_by(profile_id=user.id,active=True).first()
             bench_char = s.query(GameCharacter).filter_by(profile_id=user.id,active=False).all()
@@ -625,6 +625,16 @@ class Game(commands.Cog, name='DiscordFun'):
             user.health = 0
             user.exp = int(user.exp/2)
         return user
+
+    def get_respawn_time(self, ctx, user):
+        if ctx.guild:
+            server_region = ctx.guild.region.name
+        else:
+            server_region = 'GMT'
+        if user.deathtime:
+            respawn_time = user.deathtime + timedelta(hours=self.RESPAWN_TIME)
+            return self.convert_from_utc(respawn_time, server_region).strftime("%I:%M %p, %d %b %Y")
+        return ''
 
     def bonus_rate(self, user):
         element = 'Normal'
