@@ -21,7 +21,7 @@ class Game(commands.Cog, name='DiscordFun'):
     CRIT_CHANCE = 18
     TRIP_CHANCE = 5
     TRIP_DAMAGE = 25
-    RESPAWN_TIME = 1  # Hours
+    RESPAWN_TIME = 3  # Hours
     PRIMO_CLAIM_RATE = 24  # Hours
     PRIMO_CLAIM_VALUE = 300
     PRIMO_BONUS_CHANCE = 10
@@ -235,6 +235,9 @@ class Game(commands.Cog, name='DiscordFun'):
                 await ctx.send(f'{target.display_name.title()} does not seem to have started their adventure')
                 return
             user = self.check_user_status(user)
+            if user.deathtime:
+                await ctx.send(f'You are currently respawning!')
+                return
             if user.stamina < cost:
                 await ctx.send(f'Sorry you do not have enough stamina. Go take a nap and come back later')
                 return
@@ -265,16 +268,16 @@ class Game(commands.Cog, name='DiscordFun'):
             msg = ''
             if crit <= self.CRIT_CHANCE:
                 dmg = dmg*2
-                msg += 'A Critical Hit!\n'
+                msg += '\nA Critical Hit!'
             if (target_user.level-user.level) > 3:
                 dmg = dmg*(user.level+1)
-                msg += 'You seem to have found his weak point! Insane Damage!'
+                msg += '\nYou seem to have found his weak point! Insane Damage!'
             target_user.health -= dmg
             msg += f'\n{ctx.author.display_name} dealt {dmg} damage to {target.display_name}!'
             target_user = self.check_death(target_user)
             if not target_user.health:
-                user.exp += 100*target.level
-                respawn_time = self.convert_from_utc(target.deathtime, server_region).strftime("%I:%M %p, %d %b %Y")
+                user.exp += 100*target_user.level
+                respawn_time = self.convert_from_utc(target_user.deathtime, server_region).strftime("%I:%M %p, %d %b %Y")
                 msg += f'\n{ctx.author.display_name} defeated {target.display_name} and gained 100 exp!\n{target.display_name} will respawn at {respawn_time}'
                 if user.exp >= user.max_exp:
                     msg += f'\n{ctx.author.display_name} Leveled up!'
@@ -326,6 +329,9 @@ class Game(commands.Cog, name='DiscordFun'):
                 await ctx.send(f'{target.display_name.title()} does not seem to have started their adventure')
                 return
             user = self.check_user_status(user)
+            if user.deathtime:
+                await ctx.send(f'You are currently respawning!')
+                return
             if user.stamina < cost:
                 await ctx.send(f'Sorry you do not have enough stamina. Go take a nap and come back later')
                 return
@@ -333,18 +339,18 @@ class Game(commands.Cog, name='DiscordFun'):
             # Calculate steal chance
             chance = random.randint(0, 100)
             if chance <= self.STEAL_CAUGHT_CHANCE:
-                random_char = s.query(GameCharacter).filter_by(profile_id=user.id,active=False).order_by(func.random()).limit(1).all()
-                if random_char:
-                    c = random_char[0].character
-                    await ctx.send(f"{ctx.author.display_name}'s {c.name} was caught while attempting to steal from {target.display_name}\n{flair.get_emoji(c.name)} {c.name} was lost from party...")
-                    s.delete(random_char[0])
-                    return
+                await ctx.send(f'{ctx.author.display_name} was caught stealing by Morax.\
+                \nAs punishment for breaking moral contract, {ctx.author.display_name} gave {target.display_name} all his primogems.\
+                \n{target.display_name} recieved {flair.get_emoji("Primogem")} {user.primogems}')
+                target_user.primogems = user.primogems
+                user.primogems = 0
+                return
             if chance <= self.STEAL_CHANCE*self.bonus_rate(user):
                 steal_amount = random.randint(500, 1000)
                 if target_user.primogems > steal_amount:
                     target_user.primogems -= steal_amount
                     user.primogems += steal_amount
-                    stole = f'{flair.get_emoji("Primogem")} 1000'
+                    stole = f'{flair.get_emoji("Primogem")} {steal_amount}'
                 else:
                     stole = f'{flair.get_emoji("Primogem")} {target_user.primogems}'
                     user.primogems += target_user.primogems
@@ -364,13 +370,17 @@ class Game(commands.Cog, name='DiscordFun'):
             if not user:
                 await self.no_profile(ctx)
                 return
-            if user.primogems < cost:
-                await ctx.send(f'You do not have enough primogems. {flair.get_emoji("Primogem")} 1000 needed for instant lvlup')
+            user = self.check_user_status(user)
+            if user.deathtime:
+                await ctx.send(f'You are currently respawning!')
                 return
-            user.primogems -= 3000
+            if user.primogems < cost:
+                await ctx.send(f'You do not have enough primogems. {flair.get_emoji("Primogem")} {cost} needed for instant lvlup')
+                return
+            user.primogems -= cost
             user.exp = user.max_exp
             user = self.check_user_status(user)
-            await ctx.send(f'{ctx.author.display_name} spent {flair.get_emoji("Primogem")} 3000 and leveled up!')
+            await ctx.send(f'{ctx.author.display_name} spent {flair.get_emoji("Primogem")} {cost} and leveled up!')
             return
 
     @commands.command()
@@ -383,6 +393,9 @@ class Game(commands.Cog, name='DiscordFun'):
                 await self.no_profile(ctx)
                 return
             user = self.check_user_status(user)
+            if user.deathtime:
+                await ctx.send(f'You are currently respawning!')
+                return
             if user.stamina < cost:
                 await ctx.send(f'Sorry you do not have enough stamina. Go take a nap and come back later')
                 return
@@ -453,7 +466,7 @@ class Game(commands.Cog, name='DiscordFun'):
             desc += f"\nExp: {user.exp}/{user.max_exp}"
             if user.deathtime:
                 respawn = self.convert_from_utc(user.deathtime, server_region).strftime("%I:%M %p, %d %b %Y")
-                desc+= f"Respawn Time: {respawn}"
+                desc+= f"\nRespawn Time: {respawn}"
             active_char = s.query(GameCharacter).filter_by(profile_id=user.id,active=True).first()
             bench_char = s.query(GameCharacter).filter_by(profile_id=user.id,active=False).all()
             flair = self.bot.get_cog("Flair")
@@ -489,6 +502,8 @@ class Game(commands.Cog, name='DiscordFun'):
 
     def check_user_status(self, user):
         now = datetime.utcnow()
+        # check if dead
+        user = self.check_death(user)
         # check stamina
         if user.last_check+timedelta(seconds=self.REGEN_RATE) <= now:
             stamina_gain = int(((now-user.last_check).seconds/self.REGEN_RATE*self.STAMINA_REGEN)+user.level)
@@ -512,10 +527,17 @@ class Game(commands.Cog, name='DiscordFun'):
         return user
 
     def check_death(self, user):
+        now = datetime.utcnow()
+        if user.deathtime is not None and user.deathtime+timedelta(hours=self.RESPAWN_TIME) < now:
+            user.health = user.max_health
+            user.stamina = user.max_stamina
+            user.deathtime = None
+            return user
         if user.health <= 0:
-            user.deathtime=datetime.utcnow()+timedelta(hours=self.RESPAWN_TIME)
+            user.deathtime=datetime.utcnow()
             user.stamina = 0
             user.health = 0
+            user.exp = int(user.exp/2)
         return user
 
     def bonus_rate(self, user):
