@@ -16,7 +16,7 @@ class Game(commands.Cog, name='DiscordFun'):
     STAMINA_INCREMENT = 20
     REGEN_RATE = 3600  # Seconds
     STAMINA_REGEN = 7
-    HEALTH_REGEN = 10
+    HEALTH_REGEN = 50
     MAX_DMG_MULTIPLIER = 750
     CRIT_CHANCE = 18
     TRIP_CHANCE = 5
@@ -214,8 +214,8 @@ class Game(commands.Cog, name='DiscordFun'):
 
     @commands.command()
     async def attack(self, ctx, target: discord.Member):
-        """Attack a player! Stamina Cost: 20"""
-        cost = 20
+        """Attack a player! Stamina Cost: 15"""
+        cost = 15
         if ctx.guild:
             server_region = ctx.guild.region.name
         else:
@@ -311,8 +311,8 @@ class Game(commands.Cog, name='DiscordFun'):
 
     @commands.command()
     async def mug(self, ctx, target:discord.Member):
-        """Attempt to steal primogems from another player. Stamina Cost: 20"""
-        cost = 20
+        """Attempt to steal primogems from another player. Stamina Cost: 15"""
+        cost = 15
         flair = self.bot.get_cog("Flair")
 
         check = await self.check_member_is_mona(ctx, target)
@@ -424,7 +424,7 @@ class Game(commands.Cog, name='DiscordFun'):
             if not user:
                 await self.no_profile(ctx)
                 return
-            current_active = s.query(GameCharacter).filter_by(active=True).first()
+            current_active = s.query(GameCharacter).filter_by(active=True, profile_id=user.id).first()
             if current_active.character.name == name:
                 await ctx.send(f'{flair.get_emoji(name)} {name} is already your active character!')
                 return
@@ -432,13 +432,99 @@ class Game(commands.Cog, name='DiscordFun'):
             if not char:
                 await ctx.send(f'{name} is not a known character in Tevyat')
                 return
-            new_active = s.query(GameCharacter).filter_by(character_id=char.id).first()
+            new_active = s.query(GameCharacter).filter_by(character_id=char.id, profile_id=user.id).first()
             if not new_active:
                 await ctx.send(f'{name} is not in your party')
                 return
             new_active.active = True
             current_active.active = False
             await ctx.send(f'{flair.get_emoji(name)} {name} is now your active character!')
+
+    @commands.command()
+    async def explore(self, ctx):
+        """You never know what you might find. Stamina Cost: 5"""
+        if ctx.guild:
+            server_region = ctx.guild.region.name
+        else:
+            server_region = 'GMT'
+
+        cost = 5
+        with session_scope() as s:
+            user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
+            if not user:
+                await self.no_profile(ctx)
+                return
+            user = self.check_user_status(user)
+            if user.deathtime:
+                await ctx.send(f'You are currently respawning!')
+                return
+            if user.stamina < cost:
+                await ctx.send(f'Sorry you do not have enough stamina. Go take a nap and come back later')
+                return
+            user.stamina -= cost
+            flair = self.bot.get_cog("Flair")
+            random_event = random.randint(1, 1000)
+            # Trigger random event
+            if random_event == 999:
+                random_char = s.query(GameCharacter).filter_by(profile_id=user.id).order_by(func.random()).first()
+                random_char.constellation += 1
+                await ctx.send(f'While exploring Stormterror {ctx.author.display_name} stumbled upon a strange meteor.\n{flair.get_emoji(random_char.character.name)} {random_char.character.name} touched the rock and was imbued with mysterious energy. {random_char.character.name} constellation up-ed!')
+                return
+            elif random_event >= 989:
+                user.stamina == 0
+                await ctx.send(f'{ctx.author.display_name} did not pay attention while collecting crabs at Yangguang Shoal.\n {ctx.author.display_name} was frozen by an Ice Slime and lost all stamina')
+                return
+            elif random_event >= 979:
+                user.primogems += 1000
+                await ctx.send(f'Wow, {ctx.author.display_name} found a precious chest! {flair.get_emoji("Primogem")} 1000')
+                return
+            elif random_event >= 969:
+                if user.primogems < 500:
+                    stolen = user.primogems
+                else:
+                    stolen = 500
+                user.primogems -= stolen
+                await ctx.send(f'{ctx.author.display_name} was investigation Dunyu Ruins when an invisible Fatui agent snuck up and snatched his purse!\nLost {flair.get_emoji("Primogem")} {stolen}!')
+                return
+            elif random_event >= 959:
+                dmg = user.level*750
+                user.health -= dmg
+                user = self.check_death(user)
+                msg = f'{ctx.author.display_name} stepped on a buried bomb. Kaboom! {ctx.author.display_name} took {dmg} damage'
+                if user.deathtime:
+                    respawn_time = self.convert_from_utc(user.deathtime, server_region).strftime("%I:%M %p, %d %b %Y")
+                    msg += f'\n{ctx.author.display_name} perished. Respawning at {respawn_time}'
+                await ctx.send(msg)
+                return
+            elif random_event >= 859:
+                random_exp = random.randint(1, 50)
+                user.exp += random_exp
+                user = self.check_user_status(user)
+                await ctx.send(f'{ctx.author.display_name} found some hilichurls and took them out. Gained {random_exp} exp')
+                return
+            elif random_event >= 759:
+                random_gems = random.randint(50, 100)
+                user.primogems += random_gems
+                await ctx.send(f'{ctx.author.display_name} stumbled on a buried common chest. {flair.get_emoji("Primogem")} {random_gems}')
+                return
+            elif random_event >= 749:
+                user.health = user.max_health
+                await ctx.send(f'{ctx.author.display_name} passed a Statue of the Seven. Fully healed!')
+                return
+            elif random_event >= 739:
+                dmg = int(user.health/2)+1
+                await ctx.send(f'{ctx.author.display_name} slipped and fell while climbing Mount Hulao\n{ctx.author.display_name} took {dmg} damage!')
+                return
+            elif random_event >= 729:
+                stamina_increase = user.level*5
+                user.stamina += stamina_increase
+                if user.stamina > user.max_stamina:
+                    user.stamina = user.max_stamina
+                await ctx.send(f'{ctx.author.display_name} found a relaxing spot and took a nap. Regained {stamina_increase} stamina')
+                return
+            else:
+                await ctx.send(f'{ctx.author.display_name} did not find anything particularly interesting')
+                return
 
     async def no_profile(self, ctx, member=None):
         if member is None:
