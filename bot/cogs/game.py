@@ -590,6 +590,8 @@ class Game(commands.Cog, name='DiscordFun'):
         now = datetime.utcnow()
         # check if dead
         user = self.check_death(user)
+        if user.deathtime:
+            return user
         # check stamina
         if user.last_check+timedelta(seconds=self.REGEN_RATE) <= now:
             stamina_gain = int(((now-user.last_check).seconds/self.REGEN_RATE*self.STAMINA_REGEN)+user.level)
