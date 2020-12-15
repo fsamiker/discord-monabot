@@ -70,11 +70,13 @@ class Reminders(commands.Cog):
 Options: \u2022 resin - Max Resin reminder. Value = current resin value
          \u2022 specialty - Local Specialty reminder
          \u2022 mineral - Mineral Mining reminder
+         \u2022 artifact - Artifact Run reminder
 
 Example Usage:
 \u2022 m!remindme resin 50
 \u2022 m!remindme specialty
-\u2022 m!remindme mineral```'''
+\u2022 m!remindme mineral
+\u2022 m!remindme artifact```'''
             await ctx.send(f'{message}\n{examples}')
 
         option = args[0].lower()
