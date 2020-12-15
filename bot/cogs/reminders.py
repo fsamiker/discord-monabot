@@ -84,7 +84,7 @@ Example Usage:
             server_region = 'GMT'
         message = ''
 
-        if option not in ['resin', 'specialty', 'mineral']:
+        if option not in ['resin', 'specialty', 'mineral', 'artifact']:
             await usage('Invalid option')
             return
 
@@ -138,7 +138,7 @@ Example Usage:
                     s.add(r)
                     message += f'Max Resin {self.bot.get_cog("Flair").get_emoji("Resin")} reminder set for {display_time}'
 
-        if option in ['specialty', 'mineral']:
+        if option in ['specialty', 'mineral', 'artifact']:
             # validate specialty input
             if len(args) != 1:
                 await usage('Invalid Command')
@@ -151,6 +151,10 @@ Example Usage:
                 days=3
                 typing = 'Mineral Respawn'
                 r_msg = f'Your minerals have respawned!'
+            elif option == 'artifact':
+                days=1
+                typing = 'Artifiact Run Respawn'
+                r_msg = f'Your Artifact Run has respawned!'
             with session_scope() as s:
                 now = datetime.utcnow()+timedelta(days=days)
                 display_time = self.convert_from_utc(now, server_region).strftime("%I:%M %p, %d %b %Y")

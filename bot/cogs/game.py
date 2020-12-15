@@ -126,7 +126,7 @@ class Game(commands.Cog, name='DiscordFun'):
             await self.send_user_profile(ctx, member)
 
     @commands.command()
-    async def weatherreport(self, ctx):
+    async def checkweather(self, ctx):
         """Check current game weather"""
         embed=discord.Embed(title='Weather Report')
         flair = self.bot.get_cog("Flair")
@@ -282,8 +282,8 @@ class Game(commands.Cog, name='DiscordFun'):
             msg += f'\n{ctx.author.display_name} dealt {dmg} damage to {target.display_name}!'
             target_user = self.check_death(target_user)
             if not target_user.health:
-                exp_gain = 100*target_user.level
-                user.exp += 100*target_user.level
+                exp_gain = 50*target_user.level
+                user.exp += exp_gain
                 respawn_time = self.get_respawn_time(ctx, target_user)
                 msg += f'\n{ctx.author.display_name} defeated {target.display_name} and gained {exp_gain} exp!\n{target.display_name} will respawn at {respawn_time}'
                 if user.exp >= user.max_exp:

@@ -27,7 +27,8 @@ class Resin(commands.Cog):
             server_region = 'GMT'
 
         # Prepare embded
-        embed = discord.Embed(title=f"{member_name.capitalize()}'s Resin")
+        embed = discord.Embed(title=f"{member_name.capitalize()}'s Resin",
+        color=discord.Colour.dark_blue())
 
         # Get User Resin
         with session_scope() as s:
@@ -96,6 +97,54 @@ class Resin(commands.Cog):
         
         await ctx.send(message)
 
+    @commands.command()
+    async def timetoresin(self, ctx, resin_value, member:discord.Member=None):
+        """Get time of particular resin value"""
+
+        # Verify resin value
+        error = self.verify_resin(resin_value)
+        if error is not None:
+            await ctx.send(f'{error}')
+            return
+        resin_value = int(resin_value)
+
+        # Resin Target User
+        if member is None:
+            member = ctx.message.author
+        member_id = member.id
+        member_name = member.display_name
+        if ctx.guild:
+            server_region = ctx.guild.region.name
+        else:
+            server_region = 'GMT'
+
+        # Prepare embded
+        embed = discord.Embed(title=f"{member_name.capitalize()}'s Resin",
+        color=discord.Colour.dark_blue())
+
+        # Get User Resin
+        with session_scope() as s:
+            resin = s.query(resinmodel).filter_by(discord_id=member_id).first()
+            if not resin:
+                embed.description = 'No Record'
+                embed.set_footer(text='Run m!setresin to record resin')
+            else:
+                resin_time = self.get_resin_time(resin.timestamp, resin.resin, resin_value)
+                display_time = self.convert_from_utc(resin_time, server_region).strftime("%I:%M %p, %d %b %Y")
+                now = datetime.utcnow()
+                if resin_time < now:
+                    embed.description = 'You are already at max resin'
+                    embed.add_field(name= f'{self.bot.get_cog("Flair").get_emoji("Resin")} 160', value='\u200b')
+                else:
+                    embed.description = f'You will reach {self.bot.get_cog("Flair").get_emoji("Resin")}{resin_value} at {display_time}'
+                    current_resin = self.get_current_resin(resin.timestamp, resin.resin)
+                    embed.add_field(name= f'Current {self.bot.get_cog("Flair").get_emoji("Resin")}: {current_resin}', value='\u200b')
+                max_resin_time = self.get_max_resin_time(now, resin.resin)
+                max_display_time = self.convert_from_utc(max_resin_time, server_region).strftime("%I:%M %p, %d %b %Y")    
+                embed.set_footer(text=f'Max Resin At: {max_display_time}')
+        
+        await ctx.send(embed=embed)
+
     def get_current_resin(self, time, resin: int):
         resin_since = (datetime.utcnow() - time).seconds/(self.resin_rate*60)
         return math.floor(resin+resin_since)
@@ -104,11 +153,15 @@ class Resin(commands.Cog):
         del self._resin_list[member_id]
 
     def get_max_resin_time(self, current_time, current_resin: int):
-        seconds_to_max = self.get_seconds_to_max(current_resin)
+        seconds_to_max = self.get_seconds_to_resin(current_resin)
         return current_time + timedelta(seconds=seconds_to_max)
 
-    def get_seconds_to_max(self, resin):
-        return (self.max_resin-resin)*self.resin_rate*60
+    def get_resin_time(self, current_time, current_resin, target_resin):
+        seconds_to = self.get_seconds_to_resin(current_resin, target_resin)
+        return current_time + timedelta(seconds=seconds_to)
+
+    def get_seconds_to_resin(self, resin, final_resin=160):
+        return (final_resin-resin)*self.resin_rate*60
 
     def verify_resin(self, resin):
         try:
