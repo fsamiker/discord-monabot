@@ -30,7 +30,9 @@ class Game(commands.Cog, name='DiscordFun'):
     STEAL_CAUGHT_CHANCE = 5
     MAX_HEAL_CHANCE = 35
     HEAL_MULTIPLIER = 750
-    WEAHTER_MULTIPLIER = 1.5
+    WEATHER_MULTIPLIER = 1.5
+    WEATHER_SPECIAL_CHANCE = 20
+    WEATHER_CHANGE_RATE = 14400  # Seconds
     WEATHER = {
         'Pyro': 'Scorching day, not a single cloud in the sky! Pyro characters enjoy a boost!',
         'Cryo': 'It is freezing today! Cryo characters enjoy a boost!',
@@ -55,14 +57,14 @@ class Game(commands.Cog, name='DiscordFun'):
         print('Starting the Weather Engine!')
         while self._enable_weather:
             n = random.randint(0, 100)
-            if n <= 20:
+            if n <= self.WEATHER_SPECIAL_CHANCE:
                 #Special weather
                 weathers = ['Pyro', 'Cryo', 'Geo', 'Hydro', 'Anemo','Electro']
                 w = random.randint(0, len(weathers)-1)
                 self._todays_weather = weathers[w]
             else:
                 self._todays_weather = 'Normal'
-            await asyncio.sleep(21600)  # wait 6 hours
+            await asyncio.sleep(self.WEATHER_CHANGE_RATE)  # wait 6 hours
 
     @commands.command()
     async def startadventure(self, ctx, character:str=''):
@@ -235,8 +237,12 @@ class Game(commands.Cog, name='DiscordFun'):
                 await ctx.send(f'{target.display_name.title()} does not seem to have started their adventure')
                 return
             user = self.check_user_status(user)
+            target_user = self.check_user_status(target_user)
             if user.deathtime:
                 await ctx.send(f'You are currently respawning!')
+                return
+            if target_user.deathtime:
+                await ctx.send(f'{target.display_name} is currently still respawning!')
                 return
             if user.stamina < cost:
                 await ctx.send(f'Sorry you do not have enough stamina. Go take a nap and come back later')
@@ -276,9 +282,10 @@ class Game(commands.Cog, name='DiscordFun'):
             msg += f'\n{ctx.author.display_name} dealt {dmg} damage to {target.display_name}!'
             target_user = self.check_death(target_user)
             if not target_user.health:
+                exp_gain = 100*target_user.level
                 user.exp += 100*target_user.level
                 respawn_time = self.get_respawn_time(ctx, target_user)
-                msg += f'\n{ctx.author.display_name} defeated {target.display_name} and gained 100 exp!\n{target.display_name} will respawn at {respawn_time}'
+                msg += f'\n{ctx.author.display_name} defeated {target.display_name} and gained {exp_gain} exp!\n{target.display_name} will respawn at {respawn_time}'
                 if user.exp >= user.max_exp:
                     msg += f'\n{ctx.author.display_name} Leveled up!'
             user = self.check_user_status(user)
