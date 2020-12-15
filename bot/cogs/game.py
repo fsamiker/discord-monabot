@@ -628,6 +628,8 @@ class Game(commands.Cog, name='DiscordFun'):
             user.stamina = user.max_stamina
             user.deathtime = None
             return user
+        if user.deathtime:
+            return user
         if user.health <= 0:
             user.deathtime=datetime.utcnow()
             user.stamina = 0
