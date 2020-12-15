@@ -1,5 +1,6 @@
 from data.genshin.models import Food, Material
 from data.db import session_scope
+from  sqlalchemy.sql.expression import func
 from discord.ext import commands
 import discord
 
@@ -23,7 +24,7 @@ Example Usage:
 
         material_name = ' '.join([w.capitalize() for w in args])
         with session_scope() as s:
-            m = s.query(Material).filter_by(name=material_name).first()
+            m = s.query(Material).filter(func.lower(Material.name)==func.lower(material_name)).first()
             if m:
                 file = discord.File(m.icon_url, filename='image.png')
                 embed = self.get_material_basic_info_embed(m)
@@ -45,7 +46,7 @@ Example Usage:
 
         food_name = ' '.join([w.capitalize() for w in args])
         with session_scope() as s:
-            f = s.query(Food).filter_by(name=food_name).first()
+            f = s.query(Food).filter(func.lower(Food.name)==func.lower(food_name)).first()
             if f:
                 file = discord.File(f.icon_url, filename='image.png')
                 embed = self.get_food_basic_info_embed(f)

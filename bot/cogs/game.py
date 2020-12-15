@@ -413,7 +413,7 @@ class Game(commands.Cog, name='DiscordFun'):
             chance = random.randint(0, 100)
             if chance <= self.MAX_HEAL_CHANCE*self.bonus_rate(user):
                 user.health = user.max_health
-                await ctx.send(f'{ctx.author.display_name} were blessed by Barbatos! Healed to full!')
+                await ctx.send(f'{ctx.author.display_name} was blessed by Barbatos! Healed to full!')
                 return
             heal = random.randint(10, user.level*self.HEAL_MULTIPLIER)
             user.health += heal

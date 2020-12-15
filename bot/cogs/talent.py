@@ -1,4 +1,4 @@
-from data.genshin.models import Talent, TalentLevel
+from data.genshin.models import Character, Talent, TalentLevel
 from data.db import session_scope
 from bot.utils.text import get_texttable
 from discord.ext import commands
@@ -39,15 +39,15 @@ Example Usage:
         """Get Talent materials required"""
 
         async def usage(message):
-            examples = '''```Command: talent <talent name> optional:<starting lvl> <target lvl>
+            examples = '''```Command: talent <character name> optional:<starting lvl> <target lvl>
+Starting Level: Start material count from not including current level (Default: 2)
+Starting Level: End material count to level (Default: 10)
 Note: 
-\u2022 Name of talents need to be encapsulated with "<name>" if they are more than one word long
 \u2022 Levels do not include constellation bonuses
 
 Example Usage:
-\u2022 m!talent sharpshooter
-\u2022 m!talent "Kaboom!" 4 10
-\u2022 m!talent "passion overload" 8 10```'''
+\u2022 m!talent keqing
+\u2022 m!talent bennett 8 10```'''
 
         name = name.title()
         # Check inputs
@@ -69,17 +69,18 @@ Example Usage:
             return
 
         with session_scope() as s:
-            tal = s.query(Talent).filter_by(name=name).first()
-            if tal is None:
-                await ctx.send(f'Could not find talent by the name of "{name}" in my grimoire')
+            char = s.query(Character).filter_by(name=name).first()
+            if not char or not char.talents:
+                await ctx.send(f'Could not find details on anyone named "{name}" in my grimoire')
                 return
+            tal = char.talents[0]
             char_emoji = self.bot.get_cog("Flair").get_emoji(tal.character.name)
             lvl_list = s.query(TalentLevel).\
                 filter(TalentLevel.talent_id==tal.id, TalentLevel.level>=starting_lvl, TalentLevel.level <=target_lvl).\
                     order_by(TalentLevel.level.asc()).all()
 
             if not lvl_list:
-                await ctx.send(f'There is no level up available for {char_emoji} {name}')
+                await ctx.send(f'There is no level up available for {char_emoji} {name} in range specified')
                 return
 
             if len(lvl_list) == 1:
@@ -87,7 +88,7 @@ Example Usage:
             else:
                 footer = f'\nLevel: {lvl_list[0].level} to {lvl_list[-1].level}'
 
-            embed = self.get_material_embed(f'{char_emoji} {tal.name} - Level Materials',
+            embed = self.get_material_embed(f'{char_emoji} {char.name} - Talent Level Materials',
              lvl_list,
              footer,
              self.bot.get_cog("Flair").get_element_color(tal.character.element))
