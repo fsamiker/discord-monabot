@@ -39,7 +39,7 @@ Example Usage:
         """Get Talent materials required"""
 
         async def usage(message):
-            examples = '''```Command: talent <character name> optional:<starting lvl> <target lvl>
+            examples = '''```Command: talentmaterial <character name> optional:<starting lvl> <target lvl>
 Starting Level: Start material count from not including current level (Default: 2)
 Starting Level: End material count to level (Default: 10)
 Note: 

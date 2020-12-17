@@ -217,6 +217,9 @@ class Enemy(Base):
     def __repr__(self):
         return f'<Enemy ({self.typing}): {self.name}>'
 
+    def get_variants(self):
+        return self.variants.split(',')
+
 class Artifact(Base):
     __tablename__= 'artifacts'
     id = Column(Integer, primary_key=True)

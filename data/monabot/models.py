@@ -36,6 +36,15 @@ class Resin(Base):
     resin = Column(Integer)
     timestamp = Column(DateTime)
 
+class Update(Base):
+    __tablename__ = 'updates'
+    id = Column(Integer, primary_key=True)
+    update_str = Column(String)
+    timestamp = Column(DateTime)
+
+    def update_list(self):
+        return self.update_str.split(',')
+
 class GameProfile(Base):
     __tablename__ = 'gameprofiles'
     id = Column(Integer, primary_key=True)

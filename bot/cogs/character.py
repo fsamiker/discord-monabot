@@ -18,14 +18,12 @@ class Characters(commands.Cog):
 
         async def usage(message):
             examples = '''```Command: character <character name> optional: <option>          
-Options: \u2022 default - Character basic information text
-         \u2022 image - Character basic information image
+Options: \u2022 default - Character basic information
          \u2022 talents - Character talent list
          \u2022 constellations - Character constellations list
 
 Example Usage:
 \u2022 m!character amber
-\u2022 m!character zhongli image
 \u2022 m!character bennett talents
 \u2022 m!character keqing constellations```'''
             await ctx.send(f'{message}\n{examples}')
@@ -33,7 +31,7 @@ Example Usage:
         option = option.lower()
         name = name.capitalize()
 
-        if option not in ['default', 'image', 'talents', 'constellations']:
+        if option not in ['default', 'talents', 'constellations']:
             await usage('Invalid command')
 
         with session_scope() as s:
@@ -45,11 +43,6 @@ Example Usage:
             if option == 'default':
                 embed = self.get_character_basic_embed(char)
                 await ctx.send(file=icon_file, embed=embed)
-            elif option == 'image':
-                if char.profile_url:
-                    await ctx.send(file=discord.File(char.profile_url))
-                else:
-                    await ctx.send(f'Could not find profile image for {char.name}')
             elif option == 'talents':
                 talents = char.talents
                 embed = self.get_talents_embed(talents, char)
