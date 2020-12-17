@@ -23,3 +23,4 @@ assets/genshin/generated
 alembic.ini
 alembic/
 data/scripts/
+local_db/

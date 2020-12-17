@@ -196,7 +196,7 @@ class WeaponLevel(Base):
     level = Column(Integer)
     cost = Column(Integer)
     base_atk = Column(Integer)
-    base_secondary = Column(Integer)
+    base_secondary = Column(String)
     materials = relationship("WeaponMaterial")
 
     def __repr__(self):
