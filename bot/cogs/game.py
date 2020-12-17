@@ -12,12 +12,12 @@ import asyncio
 class Game(commands.Cog, name='DiscordFun'):
 
     EXP_MULTIPLIER = 100
-    HP_MULTIPLIER = 1500
+    HP_MULTIPLIER = 500
     STAMINA_INCREMENT = 10
     REGEN_RATE = 3600  # Seconds
     STAMINA_REGEN = 7
     HEALTH_REGEN = 50
-    MAX_DMG_MULTIPLIER = 750
+    MAX_DMG_MULTIPLIER = 150
     CRIT_CHANCE = 18
     TRIP_CHANCE = 5
     TRIP_DAMAGE = 25
@@ -28,8 +28,8 @@ class Game(commands.Cog, name='DiscordFun'):
     PRIMO_BONUS_MULTIPLIER = 10
     STEAL_CHANCE = 20
     STEAL_CAUGHT_CHANCE = 5
-    MAX_HEAL_CHANCE = 35
-    HEAL_MULTIPLIER = 750
+    MAX_HEAL_CHANCE = 20
+    HEAL_MULTIPLIER = 150
     WEATHER_MULTIPLIER = 1.5
     WEATHER_SPECIAL_CHANCE = 20
     WEATHER_CHANGE_RATE = 14400  # Seconds
@@ -276,7 +276,7 @@ class Game(commands.Cog, name='DiscordFun'):
                 dmg = dmg*2
                 msg += '\nA Critical Hit!'
             if (target_user.level-user.level) > 3:
-                dmg = dmg*(user.level+1)
+                dmg = dmg*(target_user.level-user.level+1)
                 msg += '\nYou seem to have found his weak point! Insane Damage!'
             target_user.health -= dmg
             msg += f'\n{ctx.author.display_name} dealt {dmg} damage to {target.display_name}!'
@@ -448,13 +448,16 @@ class Game(commands.Cog, name='DiscordFun'):
             await ctx.send(f'{flair.get_emoji(name)} {name} is now your active character!')
 
     @commands.command()
-    async def explore(self, ctx):
+    async def explore(self, ctx, n:int=1):
         """You never know what you might find. Stamina Cost: 10"""
         if ctx.guild:
             server_region = ctx.guild.region.name
         else:
             server_region = 'GMT'
 
+        if n < 1:
+            return
+            
         cost = 10
         with session_scope() as s:
             user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
@@ -604,8 +607,8 @@ class Game(commands.Cog, name='DiscordFun'):
         if user.last_check+timedelta(seconds=self.REGEN_RATE) <= now:
             stamina_gain = int(((now-user.last_check).seconds/self.REGEN_RATE*self.STAMINA_REGEN)+user.level)
             user.stamina += stamina_gain
-            health_gain = int((now-user.last_check).seconds/self.REGEN_RATE*self.HEALTH_REGEN*user.level)
-            user.health += health_gain
+            #health_gain = int((now-user.last_check).seconds/self.REGEN_RATE*self.HEALTH_REGEN*user.level)
+            #user.health += health_gain
             if user.stamina >= user.max_stamina:
                 user.stamina = user.max_stamina
             if user.health >= user.max_health:
@@ -615,8 +618,8 @@ class Game(commands.Cog, name='DiscordFun'):
         while user.exp >= user.max_exp:
             user.level += 1
             user.exp = user.exp-user.max_exp
-            user.max_exp=user.level*self.EXP_MULTIPLIER
-            user.max_health=user.level*self.HP_MULTIPLIER
+            user.max_exp+=self.EXP_MULTIPLIER
+            user.max_health+=self.HP_MULTIPLIER
             user.max_stamina+= self.STAMINA_INCREMENT
             user.health=user.max_health
             user.deathtime=None
