@@ -254,6 +254,11 @@ class Domain(Base):
     def __repr__(self):
         return f'<Domain: {self.name}>'
 
+    def get_rec_elements(self):
+        if self.recommended_elements:
+            return self.recommended_elements.split(',')
+        return
+
 class DomainLevel(Base):
     __tablename__= 'domainlevels'
     id = Column(Integer, primary_key=True)
@@ -279,3 +284,6 @@ class DomainLevel(Base):
 
     def __repr__(self):
         return f'<Domain Level: {self.domain.name}>'
+
+    def get_enemies(self):
+        return self.enemies.split('\n')
