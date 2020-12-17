@@ -1,7 +1,7 @@
 from sqlalchemy.util.langhelpers import hybridproperty
 from data.db import Base
 from sqlalchemy import Column, Integer, String, Date
-from sqlalchemy.sql.schema import ForeignKey
+from sqlalchemy.sql.schema import ForeignKey, Table
 from sqlalchemy.orm import relationship
 
 class TalentMaterial(Base):
@@ -23,6 +23,30 @@ class CharacterMaterial(Base):
 
     def __repr__(self):
         return f'<{self.material.name} x{self.count}>'
+
+class WeaponMaterial(Base):
+    __tablename__ = 'weaponmaterial'
+    talent_id = Column(Integer, ForeignKey('weaponlevels.id'), primary_key=True)
+    material_id = Column(Integer, ForeignKey('materials.id'), primary_key=True)
+    count = Column(Integer)
+    material = relationship("Material")
+
+    def __repr__(self):
+        return f'<{self.material.name} x{self.count}>'
+
+materialenemy_association = Table('enemymaterial', Base.metadata,
+    Column('material_id', Integer, ForeignKey('materials.id')),
+    Column('enemy_id', Integer, ForeignKey('enemies.id'))
+)
+
+materialdomain_association = Table('domainmaterial', Base.metadata,
+    Column('material_id', Integer, ForeignKey('materials.id')),
+    Column('domainlevel_id', Integer, ForeignKey('domainlevels.id'))
+)
+artifactdomain_association =Table('domainartifact', Base.metadata,
+    Column('artifact_id', Integer, ForeignKey('artifacts.id')),
+    Column('domainlevel_id', Integer, ForeignKey('domainlevels.id'))
+)
 
 class Character(Base):
 
@@ -105,6 +129,14 @@ class Material(Base):
     description = Column(String, default='Unknown')
     obtain_str = Column(String, default='Unknown')
     icon_url = Column(String)
+    dropped_by = relationship(
+        "Enemy",
+        secondary=materialenemy_association,
+        back_populates="material_drops")
+    domains = relationship(
+        "DomainLevel",
+        secondary=materialdomain_association,
+        back_populates="material_drops")
 
     def __repr__(self):
         return f'<Material: {self.name}>'
@@ -136,3 +168,111 @@ class Food(Base):
     effect = Column(String)
     character_id = Column(Integer, ForeignKey('characters.id'))
     specialty_of = relationship("Character", uselist=False, back_populates="special_dish")
+
+    def __repr__(self):
+        return f'<Food: {self.name}>'
+
+class Weapon(Base):
+    __tablename__= 'weapons'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    icon_url = Column(String)
+    rarity = Column(Integer)
+    typing = Column(String)
+    series = Column(String)
+    levels = relationship("WeaponLevel", back_populates="weapon")
+    description = Column(String)
+    effect = Column(String)
+    secondary_stat = Column(String)
+
+    def __repr__(self):
+        return f'<Weapon ({self.typing}): {self.name}>'
+
+class WeaponLevel(Base):
+    __tablename__= 'weaponlevels'
+    id = Column(Integer, primary_key=True)
+    weapon_id = Column(Integer, ForeignKey('weapons.id'))
+    weapon = relationship("Weapon", back_populates="levels")
+    level = Column(Integer)
+    cost = Column(Integer)
+    base_atk = Column(Integer)
+    base_secondary = Column(Integer)
+    materials = relationship("WeaponMaterial")
+
+    def __repr__(self):
+        return f'<{self.weapon.name} stats Lvl {self.level}>'
+
+class Enemy(Base):
+    __tablename__= 'enemies'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    icon_url = Column(String)
+    material_drops = relationship(
+        "Material",
+        secondary=materialenemy_association,
+        back_populates="dropped_by")
+    variants = Column(String)
+    typing = Column(String)
+
+    def __repr__(self):
+        return f'<Enemy ({self.typing}): {self.name}>'
+
+class Artifact(Base):
+    __tablename__= 'artifacts'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    icon_url = Column(String)
+    min_rarity = Column(Integer)
+    max_rarity = Column(Integer)
+    bonus_one = Column(String)
+    bonus_two = Column(String)
+    bonus_three = Column(String)
+    bonus_four = Column(String)
+    bonus_five = Column(String)
+    domains = relationship(
+        "DomainLevel",
+        secondary=artifactdomain_association,
+        back_populates="artifact_drops")
+
+    def __repr__(self):
+        return f'<Artifact Set: {self.name}>'
+
+class Domain(Base):
+    __tablename__= 'domains'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    icon_url = Column(String)
+    location = Column(String)
+    description = Column(String)
+    recommended_elements = Column(String)
+    typing = Column(String)
+    levels = relationship("DomainLevel", back_populates="domain")
+
+    def __repr__(self):
+        return f'<Domain: {self.name}>'
+
+class DomainLevel(Base):
+    __tablename__= 'domainlevels'
+    id = Column(Integer, primary_key=True)
+    domain_id = Column(Integer, ForeignKey('domains.id'))
+    domain = relationship("Domain", back_populates="levels")
+    day = Column(String)
+    requirement = Column(Integer)
+    ar_exp = Column(Integer)
+    friendship_exp = Column(Integer)
+    mora = Column(Integer)
+    leyline = Column(String)
+    level = Column(Integer)
+    material_drops = relationship(
+        "Material",
+        secondary=materialdomain_association,
+        back_populates="domains")
+    artifact_drops = relationship(
+        "Artifact",
+        secondary=artifactdomain_association,
+        back_populates="domains")
+    enemies = Column(String)
+    objective = Column(String)
+
+    def __repr__(self):
+        return f'<Domain Level: {self.domain.name}>'
