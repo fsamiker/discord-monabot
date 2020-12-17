@@ -457,7 +457,7 @@ class Game(commands.Cog, name='DiscordFun'):
 
         if n < 1:
             return
-            
+
         cost = 10
         with session_scope() as s:
             user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
@@ -556,17 +556,17 @@ class Game(commands.Cog, name='DiscordFun'):
             if not user:
                 await self.no_profile(ctx, member)
                 return
+            flair = self.bot.get_cog("Flair")
             user = self.check_user_status(user)
-            desc = f"\nLevel: {user.level}"
+            desc = f"\nAR {flair.get_emoji('AR')}: {user.level}"
             desc += f"\nHealth: {user.health}/{user.max_health}"
             desc += f"\nStamina: {user.stamina}/{user.max_stamina}"
-            desc += f"\nExp: {user.exp}/{user.max_exp}"
+            desc += f"\nEXP: {user.exp}/{user.max_exp}"
             if user.deathtime:
                 respawn = self.get_respawn_time(ctx, user)
                 desc+= f"\nRespawn Time: {respawn}"
             active_char = s.query(GameCharacter).filter_by(profile_id=user.id,active=True).first()
             bench_char = s.query(GameCharacter).filter_by(profile_id=user.id,active=False).all()
-            flair = self.bot.get_cog("Flair")
             embed = discord.Embed(title=f"{member.display_name.title()}'s profile",
             description=desc,
             color=flair.get_element_color(active_char.character.element)
