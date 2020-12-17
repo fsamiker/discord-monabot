@@ -13,7 +13,7 @@ class Game(commands.Cog, name='DiscordFun'):
 
     EXP_MULTIPLIER = 100
     HP_MULTIPLIER = 1500
-    STAMINA_INCREMENT = 20
+    STAMINA_INCREMENT = 10
     REGEN_RATE = 3600  # Seconds
     STAMINA_REGEN = 7
     HEALTH_REGEN = 50
@@ -410,7 +410,7 @@ class Game(commands.Cog, name='DiscordFun'):
                 await ctx.send('Your health is already full!')
                 return
             user.stamina -= cost
-            chance = random.randint(0, 100)
+            chance = random.randint(1, 100)
             if chance <= self.MAX_HEAL_CHANCE*self.bonus_rate(user):
                 user.health = user.max_health
                 await ctx.send(f'{ctx.author.display_name} was blessed by Barbatos! Healed to full!')
@@ -478,7 +478,7 @@ class Game(commands.Cog, name='DiscordFun'):
                 await ctx.send(f'While exploring Stormterror {ctx.author.display_name} stumbled upon a strange meteor.\n{flair.get_emoji(random_char.character.name)} {random_char.character.name} touched the rock and was imbued with mysterious energy. {random_char.character.name} constellation up-ed!')
                 return
             elif random_event >= 989:
-                user.stamina == 0
+                user.stamina = 0
                 await ctx.send(f'{ctx.author.display_name} did not pay attention while collecting crabs at Yangguang Shoal.\n {ctx.author.display_name} was frozen by an Ice Slime and lost all stamina')
                 return
             elif random_event >= 979:
@@ -520,6 +520,7 @@ class Game(commands.Cog, name='DiscordFun'):
                 return
             elif random_event >= 539:
                 dmg = int(user.health/2)+1
+                user.health -= dmg
                 await ctx.send(f'{ctx.author.display_name} slipped and fell while climbing Mount Hulao\n{ctx.author.display_name} took {dmg} damage!')
                 return
             elif random_event >= 529:
