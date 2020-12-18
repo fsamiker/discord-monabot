@@ -425,6 +425,8 @@ class Game(commands.Cog, name='DiscordFun'):
     @commands.cooldown(1,1,BucketType.user)
     async def heal(self, ctx):
         """Heal yourself. Stamina Cost: 10"""
+        await ctx.send('This command is currently unavailable due to bug fixes')
+        return
         cost = 10
         with session_scope() as s:
             user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
