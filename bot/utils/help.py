@@ -1,6 +1,8 @@
 GENSHIN_DATABASE_MD = '''
 Access curated details on all things genshin from [Genshin Wiki](https://genshin-impact.fandom.com/wiki/Genshin_Impact_Wiki)
 
+Run m!help genshin database for more details on each command
+
 **Character:**
 ```
 character           Get character details
@@ -29,6 +31,8 @@ enemy               Get enemy/boss details
 GENSHIN_DISCORD_MINIGAME = '''
 Genshin minigame right on discord!
 
+Run m!help genshin minigame for more details on each command
+
 **Start Game:**
 ```
 startadventure      Start your minigame profile
@@ -48,13 +52,15 @@ Commands that cost stamina
 explore (10)        You never know what you might find
 heal    (10)        Heal yourself
 attack  (15)        Attack a player!
-mug     (15)        Attemp to steal primogems
+mug     (15)        Attempt to steal primogems
 ```
 '''
 
 REMINDERS_HELP = '''
 Set reminders for genshin related activities.
 Never lose out on resin
+
+Run m!help reminders for more details on each command
 
 **Reminders:**
 ```
@@ -72,6 +78,8 @@ cancelreminder      Cancel an active reminder
 
 RESIN_STATUS = '''
 Check the state of your resin in genshin
+
+Run m!help resin status for more details on each command
 
 **Commands:**
 ```

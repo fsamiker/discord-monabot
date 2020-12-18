@@ -12,7 +12,7 @@ import asyncio
 class Game(commands.Cog, name='DiscordFun'):
 
     EXP_MULTIPLIER = 100
-    HP_MULTIPLIER = 500
+    HP_MULTIPLIER = 750
     STAMINA_INCREMENT = 10
     REGEN_RATE = 3600  # Seconds
     STAMINA_REGEN = 7
@@ -20,7 +20,7 @@ class Game(commands.Cog, name='DiscordFun'):
     MAX_DMG_MULTIPLIER = 150
     CRIT_CHANCE = 18
     TRIP_CHANCE = 5
-    TRIP_DAMAGE = 25
+    TRIP_DAMAGE = 75
     RESPAWN_TIME = 3  # Hours
     PRIMO_CLAIM_RATE = 24  # Hours
     PRIMO_CLAIM_VALUE = 300
