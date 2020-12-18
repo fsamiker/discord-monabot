@@ -155,7 +155,7 @@ Example Usage:
                 r_msg = f'Your minerals have respawned!'
             elif option == 'artifact':
                 days=1
-                typing = 'Artifiact Run Respawn'
+                typing = 'Artifact Run Respawn'
                 r_msg = f'Your Artifact Run has respawned!'
             with session_scope() as s:
                 now = datetime.utcnow()+timedelta(days=days)

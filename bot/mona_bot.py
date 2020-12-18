@@ -13,6 +13,10 @@ from bot.cogs.game import Game as GameCog
 from bot.cogs.core import Core as CoreCog
 from bot.cogs.admin import Admin as AdminCog
 from bot.cogs.character import Characters as CharacterCog
+from bot.cogs.enemy import Enemies as EnemyCog
+from bot.cogs.weapon import Weapons as WeaponCog
+from bot.cogs.artifact import Artifacts as ArtifactCog
+from bot.cogs.domain import Domains as DomainCog
 
 import os
 
@@ -32,7 +36,7 @@ ADMIN_ID = os.getenv('ADMIN_ID')
 intents = discord.Intents.default()
 intents.members = True
 intents.guilds=True
-bot = commands.Bot(command_prefix='m!', intents=intents)
+bot = commands.Bot(command_prefix='m!', intents=intents, help_command=None)
 
 # Add cog modules
 bot.add_cog(CoreCog(bot))
@@ -45,7 +49,10 @@ bot.add_cog(GameCog(bot))
 bot.add_cog(FlairCog(bot))
 bot.add_cog(MaterialCog(bot))
 bot.add_cog(TalentCog(bot))
-bot.add_cog(ErrorHandler(bot))
+bot.add_cog(EnemyCog(bot))
+bot.add_cog(WeaponCog(bot))
+bot.add_cog(ArtifactCog(bot))
+bot.add_cog(DomainCog(bot))
 
 # Run Bot
 bot.run(TOKEN)
