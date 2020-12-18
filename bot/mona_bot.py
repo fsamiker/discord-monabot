@@ -31,6 +31,19 @@ from data.monabot.models import *
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
+# Set Logging
+import logging
+logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+rootLogger = logging.getLogger()
+
+fileHandler = logging.FileHandler("{0}/{1}.log".format('logs', 'monabot'))
+fileHandler.setFormatter(logFormatter)
+rootLogger.addHandler(fileHandler)
+
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(logFormatter)
+rootLogger.addHandler(consoleHandler)
+
 # Initiate bot
 intents = discord.Intents.default()
 intents.members = True
@@ -52,6 +65,7 @@ bot.add_cog(EnemyCog(bot))
 bot.add_cog(WeaponCog(bot))
 bot.add_cog(ArtifactCog(bot))
 bot.add_cog(DomainCog(bot))
+bot.add_cog(ErrorHandler(bot))
 
 # Run Bot
 bot.run(TOKEN)

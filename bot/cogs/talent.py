@@ -1,3 +1,4 @@
+from discord.ext.commands.cooldowns import BucketType
 from data.genshin.models import Character, Talent, TalentLevel
 from data.db import session_scope
 from bot.utils.text import get_texttable
@@ -13,6 +14,7 @@ class Talents(commands.Cog):
         self.bot = bot
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def talent(self, ctx, *args):
         """Get Talent Details"""
 
@@ -35,6 +37,7 @@ Example Usage:
                 await ctx.send(f'Could not find talent "{talent_name}"')
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def talentmaterial(self, ctx, name:str, starting_lvl=1, target_lvl=10):
         """Get Talent materials required"""
 

@@ -1,3 +1,4 @@
+from discord.ext.commands.cooldowns import BucketType
 from data.genshin.models import Weapon, WeaponLevel
 from data.db import session_scope
 from discord.ext import commands
@@ -13,6 +14,7 @@ class Weapons(commands.Cog):
         self.bot = bot
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def weapon(self, ctx, *args):
         """Get Weapon Details"""
 
@@ -36,6 +38,7 @@ Example Usage:
                 await ctx.send(f'Could not find weapon "{name}"')
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def weaponmaterial(self, ctx, *args):
         """Get Weapon Details"""
 

@@ -1,3 +1,4 @@
+from discord.ext.commands.cooldowns import BucketType
 from data.genshin.models import Artifact
 from data.db import session_scope
 from  sqlalchemy.sql.expression import func
@@ -10,6 +11,7 @@ class Artifacts(commands.Cog):
         self.bot = bot
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def artifact(self, ctx, *args):
         """Get Artifact Set Details"""
 

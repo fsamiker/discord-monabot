@@ -1,3 +1,4 @@
+from discord.ext.commands.cooldowns import BucketType
 from data.db import session_scope
 import discord
 from datetime import datetime, timedelta
@@ -13,6 +14,7 @@ class Resin(commands.Cog):
         self.resin_rate = 8  #minutes
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def checkresin(self, ctx, member: discord.Member=None):
         """Shows current resin value. Blank for self or Tag a user"""
 
@@ -50,6 +52,7 @@ class Resin(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def setresin(self, ctx, resin):
         """Sets current resin value"""
 
@@ -109,6 +112,7 @@ class Resin(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def timetoresin(self, ctx, resin_value, member:discord.Member=None):
         """Get time of particular resin value"""
 
@@ -158,7 +162,10 @@ class Resin(commands.Cog):
 
     def get_current_resin(self, time, resin: int):
         resin_since = (datetime.utcnow() - time).seconds/(self.resin_rate*60)
-        return math.floor(resin+resin_since)
+        output = math.floor(resin+resin_since)
+        if output > self.max_resin:
+            return self.max_resin
+        return output
 
     def clear_resin(self, member_id):
         del self._resin_list[member_id]

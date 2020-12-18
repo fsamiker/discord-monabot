@@ -1,3 +1,4 @@
+from discord.ext.commands.cooldowns import BucketType
 from data.genshin.models import Food, Material
 from data.db import session_scope
 from  sqlalchemy.sql.expression import func
@@ -10,6 +11,7 @@ class Materials(commands.Cog):
         self.bot = bot
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def material(self, ctx, *args):
         """Get Material Details"""
 
@@ -33,6 +35,7 @@ Example Usage:
                 await ctx.send(f'Could not find material "{material_name}"')
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def food(self, ctx, *args):
         """Get Food Details"""
 

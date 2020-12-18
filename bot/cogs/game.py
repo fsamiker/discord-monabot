@@ -1,3 +1,4 @@
+from discord.ext.commands.cooldowns import BucketType
 from data.genshin.models import Character, Food
 from data.monabot.models import GameCharacter, GameProfile
 from data.db import session_scope
@@ -67,6 +68,7 @@ class Game(commands.Cog, name='DiscordFun'):
             await asyncio.sleep(self.WEATHER_CHANGE_RATE)  # wait 6 hours
 
     @commands.command()
+    @commands.cooldown(5,1,BucketType.guild) 
     async def startadventure(self, ctx, character:str=''):
         """Start your discord genshin minigame adventure!"""
         with session_scope() as s:
@@ -109,6 +111,7 @@ class Game(commands.Cog, name='DiscordFun'):
         await self.send_user_profile(ctx)
 
     @commands.command()
+    @commands.cooldown(5,1,BucketType.guild) 
     async def profile(self, ctx, member: discord.Member=None):
         """Check player profile"""
         if not member:
@@ -126,6 +129,7 @@ class Game(commands.Cog, name='DiscordFun'):
             await self.send_user_profile(ctx, member)
 
     @commands.command()
+    @commands.cooldown(5,1,BucketType.guild) 
     async def checkweather(self, ctx):
         """Check current game weather"""
         embed=discord.Embed(title='Weather Report')
@@ -140,6 +144,8 @@ class Game(commands.Cog, name='DiscordFun'):
         await ctx.send(embed=embed)
 
     @commands.command()
+    @commands.cooldown(1,1,BucketType.user)
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def wish(self, ctx, n:int=1):
         """Make a wish!"""
 
@@ -216,6 +222,7 @@ class Game(commands.Cog, name='DiscordFun'):
 
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(1,1,BucketType.user)
     async def attack(self, ctx, target: discord.Member):
         """Attack a player! Stamina Cost: 15"""
         cost = 15
@@ -301,6 +308,7 @@ class Game(commands.Cog, name='DiscordFun'):
             await ctx.send(embed=embed)
 
     @commands.command()
+    @commands.cooldown(1,1,BucketType.user)
     async def claimdaily(self, ctx):
         """Claim daily primogems"""
         now = datetime.utcnow()
@@ -326,6 +334,7 @@ class Game(commands.Cog, name='DiscordFun'):
                 return
 
     @commands.command()
+    @commands.cooldown(1,1,BucketType.user)
     @commands.guild_only()
     async def mug(self, ctx, target:discord.Member):
         """Attempt to steal primogems from another player. Stamina Cost: 15"""
@@ -388,6 +397,7 @@ class Game(commands.Cog, name='DiscordFun'):
         await ctx.send(f'{ctx.author.display_name} failed to steal from {target.display_name}')
                 
     @commands.command()
+    @commands.cooldown(1,1,BucketType.user)
     async def primolvlup(self, ctx):
         """Spend 3000 primogems for an instant lvlup"""
         cost = 3000
@@ -412,6 +422,7 @@ class Game(commands.Cog, name='DiscordFun'):
 
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(1,1,BucketType.user)
     async def heal(self, ctx):
         """Heal yourself. Stamina Cost: 10"""
         cost = 10
@@ -443,10 +454,11 @@ class Game(commands.Cog, name='DiscordFun'):
             user.health += heal
             if user.health > user.max_health:
                 user.health=user.max_health
-            embed.description = f'{ctx.author.display_name} healed for {heal}!'
+            embed.description = f'Healed for {heal}!\nHealth: {user.health}/{user.max_health}'
             await ctx.send(embed=embed)
 
     @commands.command()
+    @commands.cooldown(1,1,BucketType.user)
     async def switchactive(self, ctx, name:str):
         """Switch active character"""
         flair = self.bot.get_cog("Flair")
@@ -474,6 +486,7 @@ class Game(commands.Cog, name='DiscordFun'):
 
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(1,1,BucketType.user)
     async def explore(self, ctx, n:int=1):
         """You never know what you might find. Stamina Cost: 10"""
         if ctx.guild:

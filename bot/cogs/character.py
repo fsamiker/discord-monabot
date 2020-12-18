@@ -1,3 +1,4 @@
+from discord.ext.commands.cooldowns import BucketType
 from data.genshin.models import Character, CharacterLevel
 from data.db import session_scope
 from discord.ext import commands
@@ -13,6 +14,7 @@ class Characters(commands.Cog):
         self.bot = bot
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def character(self, ctx, name: str, option: str='default'):
         """Get Character Details"""
 
@@ -52,6 +54,7 @@ Example Usage:
                 await ctx.send(file=icon_file, embed=embed)
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def ascensionmaterial(self, ctx, name: str, starting_lvl=1, target_lvl=90):
         """Get Ascension Materials needed"""
 

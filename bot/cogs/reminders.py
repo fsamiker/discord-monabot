@@ -1,4 +1,5 @@
 import discord
+from discord.ext.commands.cooldowns import BucketType
 from data.monabot.models import Reminder, Resin
 from data.db import session_scope
 from datetime import datetime, timedelta
@@ -62,6 +63,7 @@ class Reminders(commands.Cog):
         return utc_tz.localize(time).astimezone(user_tz)
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def remindme(self, ctx, *args):
         """Sets reminder"""
 
@@ -186,6 +188,7 @@ Example Usage:
         await ctx.send(message)
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def checkreminders(self, ctx):
         """Check current active reminders"""
 
@@ -210,6 +213,7 @@ Example Usage:
         await ctx.author.send(embed=embed)
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def cancelreminder(self, ctx, value):
         """Cancel a current reminder"""
 

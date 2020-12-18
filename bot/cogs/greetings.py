@@ -1,6 +1,7 @@
 from discord import activity
 from discord.ext import commands
 import discord
+from discord.ext.commands.cooldowns import BucketType
 
 class Greetings(commands.Cog, name='Miscellaneous'):
     def __init__(self, bot):
@@ -8,6 +9,7 @@ class Greetings(commands.Cog, name='Miscellaneous'):
         self._last_member = None
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def hello(self, ctx, *, member: discord.Member = None):
         """Says hello"""
         member = member or ctx.author
