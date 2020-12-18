@@ -37,7 +37,7 @@ Example Usage:
         """Get Food Details"""
 
         async def usage(message):
-            examples = '''```Command: material <material name>
+            examples = '''```Command: food <material name>
 
 Example Usage:
 \u2022 m!material apple

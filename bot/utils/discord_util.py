@@ -14,7 +14,7 @@ async def paginate_embed(bot, ctx, pages):
     await message.add_reaction("❌")
 
     def check(reaction, user):
-        return user == ctx.author and str(reaction.emoji) in ["◀️", "▶️", "❌"]
+        return user == ctx.author and str(reaction.emoji) in ["◀️", "▶️", "❌"] and reaction.message == message
         # This makes sure nobody except the command sender can interact with the "menu"
 
     while True:

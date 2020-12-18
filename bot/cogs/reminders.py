@@ -244,3 +244,5 @@ Example Usage:
                     await ctx.send(f'{r.typing} reminder id:{r.id} has been cancelled')
             else:
                 await ctx.send(f'Could not find reminder id:{_id}')
+
+        self._get_next_reminder()
