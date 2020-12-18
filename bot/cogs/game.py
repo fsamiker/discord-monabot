@@ -215,6 +215,7 @@ class Game(commands.Cog, name='DiscordFun'):
         await ctx.send(embed=embed)
 
     @commands.command()
+    @commands.guild_only()
     async def attack(self, ctx, target: discord.Member):
         """Attack a player! Stamina Cost: 15"""
         cost = 15
@@ -230,10 +231,6 @@ class Game(commands.Cog, name='DiscordFun'):
         with session_scope() as s:
             user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
             target_user = s.query(GameProfile).filter_by(discord_id=target.id).first()
-            if target == ctx.author:
-                user.stamina -= cost
-                await ctx.send(f'{target.display_name.title()} seems to be confused. Attempted to attack themself.')
-                return
             if not user:
                 await self.no_profile(ctx)
                 return
@@ -251,10 +248,16 @@ class Game(commands.Cog, name='DiscordFun'):
             if user.stamina < cost:
                 await ctx.send(f'Sorry you do not have enough stamina. Go take a nap and come back later')
                 return
+            if target == ctx.author:
+                user.stamina -= cost
+                await ctx.send(f'{target.display_name.title()} seems to be confused. Attempted to attack themself.')
+                return
             user.stamina -= cost
             # Calculate Damage
             crit = random.randint(0, 100)
             dmg = int(random.randint(50*user.level,user.level*self.MAX_DMG_MULTIPLIER)*self.bonus_rate(user))
+            embed = discord.Embed(title=f'{ctx.author.display_name} attacked...', color=discord.Colour.dark_red())
+            embed.set_footer(text=f'Remaining Stamina: {user.stamina}/{user.max_stamina}')
             msg = ''
             # Unfortunate chance
             if crit <=self.TRIP_CHANCE:
@@ -272,7 +275,8 @@ class Game(commands.Cog, name='DiscordFun'):
                     respawn_time = self.get_respawn_time(ctx, user)
                     msg += f'\n{user.display_name} died. Respawning at {respawn_time}'
                 msg += f'\n{target.display_name} laughed and got away unscathed'
-                await ctx.send(msg.strip())
+                embed.description = msg.strip()
+                await ctx.send(embed=embed)
                 return
             
             msg = ''
@@ -293,7 +297,8 @@ class Game(commands.Cog, name='DiscordFun'):
                 if user.exp >= user.max_exp:
                     msg += f'\n{ctx.author.display_name} Leveled up!'
             user = self.check_user_status(user)
-            await ctx.send(msg.strip())
+            embed.description = msg.strip()
+            await ctx.send(embed=embed)
 
     @commands.command()
     async def claimdaily(self, ctx):
@@ -321,6 +326,7 @@ class Game(commands.Cog, name='DiscordFun'):
                 return
 
     @commands.command()
+    @commands.guild_only()
     async def mug(self, ctx, target:discord.Member):
         """Attempt to steal primogems from another player. Stamina Cost: 15"""
         cost = 15
@@ -333,10 +339,6 @@ class Game(commands.Cog, name='DiscordFun'):
         with session_scope() as s:
             user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
             target_user = s.query(GameProfile).filter_by(discord_id=target.id).first()
-            if target == ctx.author:
-                user.stamina -= cost
-                await ctx.send(f'{target.display_name.title()} seems to be confused. Attempted to steal from themself.')
-                return
             if not user:
                 await self.no_profile(ctx)
                 return
@@ -350,13 +352,22 @@ class Game(commands.Cog, name='DiscordFun'):
             if user.stamina < cost:
                 await ctx.send(f'Sorry you do not have enough stamina. Go take a nap and come back later')
                 return
+            embed = discord.Embed(title=f'{ctx.author.display_name} attempted to steal...', color=discord.Colour.dark_gray())
+            if target == ctx.author:
+                user.stamina -= cost
+                embed.set_footer(text=f'Remaining Stamina: {user.stamina}/{user.max_stamina}')
+                embed.description = f'{target.display_name.title()} seems to be confused. Attempted to steal from themself.'
+                await ctx.send(embed=embed)
+                return
             user.stamina -= cost
+            embed.set_footer(text=f'Remaining Stamina: {user.stamina}/{user.max_stamina}')
             # Calculate steal chance
             chance = random.randint(0, 100)
             if chance <= self.STEAL_CAUGHT_CHANCE:
-                await ctx.send(f'{ctx.author.display_name} was caught stealing by Morax.\
+                embed.description = f'{ctx.author.display_name} was caught stealing by Morax.\
                 \nAs punishment for breaking moral contract, {ctx.author.display_name} gave {target.display_name} all his primogems.\
-                \n{target.display_name} recieved {flair.get_emoji("Primogem")} {user.primogems}')
+                \n{target.display_name} recieved {flair.get_emoji("Primogem")} {user.primogems}'
+                await ctx.send(embed=embed)
                 target_user.primogems = user.primogems
                 user.primogems = 0
                 return
@@ -370,7 +381,8 @@ class Game(commands.Cog, name='DiscordFun'):
                     stole = f'{flair.get_emoji("Primogem")} {target_user.primogems}'
                     user.primogems += target_user.primogems
                     target_user.primogems = 0
-                await ctx.send(f'{ctx.author.display_name} stole {stole} from {target.display_name}!')
+                embed.description = f'{ctx.author.display_name} stole {stole} from {target.display_name}!'
+                await ctx.send(embed=embed)
                 return
         
         await ctx.send(f'{ctx.author.display_name} failed to steal from {target.display_name}')
@@ -399,6 +411,7 @@ class Game(commands.Cog, name='DiscordFun'):
             return
 
     @commands.command()
+    @commands.guild_only()
     async def heal(self, ctx):
         """Heal yourself. Stamina Cost: 10"""
         cost = 10
@@ -418,16 +431,20 @@ class Game(commands.Cog, name='DiscordFun'):
                 await ctx.send('Your health is already full!')
                 return
             user.stamina -= cost
+            embed = discord.Embed(title=f'{ctx.author.display_name} healed...', color=discord.Colour.dark_green())
+            embed.set_footer(text=f'Remaining Stamina: {user.stamina}/{user.max_stamina}')
             chance = random.randint(1, 100)
             if chance <= self.MAX_HEAL_CHANCE*self.bonus_rate(user):
                 user.health = user.max_health
-                await ctx.send(f'{ctx.author.display_name} was blessed by Barbatos! Healed to full!')
+                embed.description = f'{ctx.author.display_name} was blessed by Barbatos! Healed to full!'
+                await ctx.send(embed=embed)
                 return
             heal = random.randint(10, user.level*self.HEAL_MULTIPLIER)
             user.health += heal
             if user.health > user.max_health:
                 user.health=user.max_health
-            await ctx.send(f'{ctx.author.display_name} healed for {heal}!')
+            embed.description = f'{ctx.author.display_name} healed for {heal}!'
+            await ctx.send(embed=embed)
 
     @commands.command()
     async def switchactive(self, ctx, name:str):
@@ -456,6 +473,7 @@ class Game(commands.Cog, name='DiscordFun'):
             await ctx.send(f'{flair.get_emoji(name)} {name} is now your active character!')
 
     @commands.command()
+    @commands.guild_only()
     async def explore(self, ctx, n:int=1):
         """You never know what you might find. Stamina Cost: 10"""
         if ctx.guild:

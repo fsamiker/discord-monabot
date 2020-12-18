@@ -80,7 +80,8 @@ class Resin(commands.Cog):
             display_time = self.convert_from_utc(max_resin_time, server_region).strftime("%I:%M %p, %d %b %Y")
             embed.set_footer(text=f'Max Resin At: {display_time}')
             if r:
-                embed.add_field(name= f'{flair.get_emoji("Resin")} {r.resin} -> {resin}', value='\u200b')
+                current_resin = self.get_current_resin(r.timestamp, r.resin)
+                embed.add_field(name= f'{flair.get_emoji("Resin")} {current_resin} -> {resin}', value='\u200b')
                 r.resin = resin
                 r.timestamp = now
                 # check for existing reminder

@@ -4,10 +4,26 @@ import discord
 
 class Admin(commands.Cog):
 
-    def __init__(self, bot, admin_id):
+    def __init__(self, bot):
         self.bot = bot
-        self.admin_id = int(admin_id)
 
-    def _allowed(self, member):
-        return bool(member.id is not None and int(member.id) == self.admin_id)
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def server_count_gbg(self, ctx):
+        count = len(self.bot.guilds)
+        await ctx.send(f'Number of servers in: {count}')
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def user_count_gbg(self, ctx):
+        count = sum([g.member_count for g in self.bot.guilds])
+        await ctx.send(f'Number of users in: {count}')
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def all_stats_gbg(self, ctx):
+        g_count = len(self.bot.guilds)
+        u_count = sum([g.member_count for g in self.bot.guilds])
+        await ctx.send(f'Number of servers in: {g_count}\nNumber of users in: {u_count}')
+
     
