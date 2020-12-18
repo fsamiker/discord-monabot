@@ -55,6 +55,7 @@ class Flair(commands.Cog):
         self.emojis['Venti'] = self.bot.get_emoji(787664848380493834)
         self.emojis['FS'] = self.bot.get_emoji(789122991036432415)
         self.emojis['AR'] = self.bot.get_emoji(789122934248701992)
+        self.emojis['Reminder'] = self.bot.get_emoji(789438946366324737)
 
     def get_element_color(self, element):
         return self.element_colors.get(element, discord.Colour.dark_theme())

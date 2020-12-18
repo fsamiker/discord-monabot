@@ -66,23 +66,30 @@ class Resin(commands.Cog):
             server_region = 'GMT'
         resin = int(resin)
 
+        # Prepare embded
+        flair = self.bot.get_cog("Flair")
+        embed = discord.Embed(title=f"{ctx.author.display_name.capitalize()}'s Resin",
+        color=discord.Colour.dark_blue())
+        desc = ''
+
         with session_scope() as s:
             # check for existing resin
             r = s.query(resinmodel).filter_by(discord_id=ctx.author.id).first()
             now = datetime.utcnow()
             max_resin_time = self.get_max_resin_time(now, resin)
             display_time = self.convert_from_utc(max_resin_time, server_region).strftime("%I:%M %p, %d %b %Y")
+            embed.set_footer(text=f'Max Resin At: {display_time}')
             if r:
+                embed.add_field(name= f'{flair.get_emoji("Resin")} {r.resin} -> {resin}', value='\u200b')
                 r.resin = resin
                 r.timestamp = now
-                message += f'Current resin changed to {self.bot.get_cog("Flair").get_emoji("Resin")} {resin}'
                 # check for existing reminder
                 reminder = s.query(Reminder).filter_by(discord_id=ctx.author.id, typing='Max Resin').first()
                 if reminder:
                     reminder.when=max_resin_time
                     reminder.timezone=server_region
                     reminder.channel=ctx.channel.id
-                    message += f"\nI've also adjusted your 'Max Resin' reminder to {display_time}"
+                    desc += f"\n{flair.get_emoji('Reminder')} 'Max Resin' reminder adjusted to {display_time}"
             else:
                 # set new entry
                 r = resinmodel(
@@ -91,11 +98,14 @@ class Resin(commands.Cog):
                     timestamp=datetime.utcnow()
                 )
                 s.add(r)
-                message += f'Current resin set to {self.bot.get_cog("Flair").get_emoji("Resin")} {resin}\nResin will be full at {display_time}'
+                desc += f'Set current resin value'
+                embed.add_field(name= f'{flair.get_emoji("Resin")} {resin}', value='\u200b')
+            
+        embed.description = desc.strip()
 
         self.bot.get_cog('Reminders')._get_next_reminder()
         
-        await ctx.send(message)
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def timetoresin(self, ctx, resin_value, member:discord.Member=None):

@@ -80,6 +80,7 @@ Example Usage:
             await ctx.send(f'{message}\n{examples}')
 
         option = args[0].lower()
+        flair = self.bot.get_cog("Flair")
         if ctx.guild:
             server_region = ctx.guild.region.name
         else:
@@ -133,12 +134,12 @@ Example Usage:
                         discord_id=ctx.author.id,
                         when=max_resin_time,
                         channel=ctx.channel.id,
-                        message=f'Your {self.bot.get_cog("Flair").get_emoji("Resin")} resin is full!',
+                        message=f'Your {flair.get_emoji("Resin")} resin is full!',
                         typing='Max Resin',
                         timezone=server_region
                     )
                     s.add(r)
-                    message += f'Max Resin {self.bot.get_cog("Flair").get_emoji("Resin")} reminder set for {display_time}'
+                    message += f'{flair.get_emoji("Reminder")} Max Resin {flair.get_emoji("Resin")} set for {display_time}'
 
         if option in ['specialty', 'mineral', 'artifact']:
             # validate specialty input
@@ -178,7 +179,7 @@ Example Usage:
                         timezone=server_region
                     )
                     s.add(r)
-                    message += f'{typing} reminder set for {display_time}'
+                    message += f'{flair.get_emoji("Reminder")} {typing} set for {display_time}'
 
         self._get_next_reminder()
 
@@ -189,7 +190,7 @@ Example Usage:
         """Check current active reminders"""
 
         # Prepare embed
-        embed = discord.Embed(title=f"{ctx.author.display_name.capitalize()}'s Reminders")
+        embed = discord.Embed(title=f"{ctx.author.display_name.capitalize()}'s Reminders", color=discord.Colour.lighter_grey())
         if ctx.guild:
             server_region = ctx.guild.region.name
         else:

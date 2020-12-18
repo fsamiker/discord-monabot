@@ -230,6 +230,10 @@ class Game(commands.Cog, name='DiscordFun'):
         with session_scope() as s:
             user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
             target_user = s.query(GameProfile).filter_by(discord_id=target.id).first()
+            if target == ctx.author:
+                user.stamina -= cost
+                await ctx.send(f'{target.display_name.title()} seems to be confused. Attempted to attack themself.')
+                return
             if not user:
                 await self.no_profile(ctx)
                 return
@@ -329,6 +333,10 @@ class Game(commands.Cog, name='DiscordFun'):
         with session_scope() as s:
             user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
             target_user = s.query(GameProfile).filter_by(discord_id=target.id).first()
+            if target == ctx.author:
+                user.stamina -= cost
+                await ctx.send(f'{target.display_name.title()} seems to be confused. Attempted to steal from themself.')
+                return
             if not user:
                 await self.no_profile(ctx)
                 return
