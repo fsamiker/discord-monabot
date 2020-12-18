@@ -30,7 +30,6 @@ from data.monabot.models import *
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-ADMIN_ID = os.getenv('ADMIN_ID')
 
 # Initiate bot
 intents = discord.Intents.default()
@@ -43,7 +42,7 @@ bot.add_cog(CoreCog(bot))
 bot.add_cog(GreetingsCog(bot))
 bot.add_cog(RemindersCog(bot))
 bot.add_cog(ResinCog(bot))
-bot.add_cog(AdminCog(bot, ADMIN_ID))
+bot.add_cog(AdminCog(bot))
 bot.add_cog(CharacterCog(bot))
 bot.add_cog(GameCog(bot))
 bot.add_cog(FlairCog(bot))
