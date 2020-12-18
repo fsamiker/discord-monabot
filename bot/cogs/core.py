@@ -1,4 +1,4 @@
-from bot.utils.discord_util import paginate_embed
+from bot.utils.discord_util import paginate_embed, send_temp_embed
 from discord.ext import commands
 from bot.utils.help import GENSHIN_CANCELKREMINDERS, GENSHIN_CHECKREMINDERS, GENSHIN_DATABASE_MD, GENSHIN_DB_ARTIFACT, GENSHIN_DB_CHAR, GENSHIN_DB_CHAR_ASC, GENSHIN_DB_DOMAIN, GENSHIN_DB_ENEMY, GENSHIN_DB_FOOD, GENSHIN_DB_MATERIAL, GENSHIN_DB_TAL, GENSHIN_DB_TAL_MAT, GENSHIN_DB_WEAPON, GENSHIN_DB_WEAPON_MAT, GENSHIN_DISCORD_MINIGAME, GENSHIN_GAME_ATTACK, GENSHIN_GAME_CLAIM, GENSHIN_GAME_EXPLORE, GENSHIN_GAME_HEAL, GENSHIN_GAME_MUG, GENSHIN_GAME_PRIMOLVLUP, GENSHIN_GAME_PROFILE, GENSHIN_GAME_START, GENSHIN_GAME_SWITCH, GENSHIN_GAME_WEATHER, GENSHIN_GAME_WISH, GENSHIN_REMINDME, GENSHIN_RESIN_CHECK, GENSHIN_RESIN_SET, GENSHIN_RESIN_TIME, REMINDERS_HELP, RESIN_STATUS
 import discord
@@ -18,7 +18,8 @@ class Core(commands.Cog):
         category = ' '.join(arg)
 
         if category.lower() in self._help_dict.keys():
-            pass
+            await send_temp_embed(self.bot, ctx, self._help_dict[category])
+            return
         if category.lower() == 'genshin database':
             embeds = []
             embeds.append(discord.Embed(title="Genshin Database - Commands", description=GENSHIN_DATABASE_MD, color=discord.Colour.dark_red()))

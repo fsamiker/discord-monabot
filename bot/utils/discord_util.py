@@ -46,3 +46,39 @@ async def paginate_embed(bot, ctx, pages):
             await message.delete()
             break
             # ending the loop if user doesn't react after x seconds
+
+async def send_temp_embed(bot, ctx, embed, discord_file=None):
+    extra_footer = f'\nThis embed will be auto-deleted in 60 seconds\nClick 📌 to keep it here or ❌ to close it'
+    if type(embed.footer.text) == str and extra_footer not in embed.footer.text:
+        embed.set_footer(text=(embed.footer.text + extra_footer))
+    else:
+        embed.set_footer(text=extra_footer)
+    if discord_file is None:
+        message = await ctx.send(embed=embed)
+    else:
+        message = await ctx.send(embed=embed, file=discord_file)
+
+    await message.add_reaction("📌")
+    await message.add_reaction("❌")
+
+    def check(reaction, user):
+        return user == ctx.author and str(reaction.emoji) in ["📌", "❌"] and reaction.message == message
+        # This makes sure nobody except the command sender can interact with the "menu"
+
+    while True:
+        try:
+            reaction, user = await bot.wait_for("reaction_add", timeout=60, check=check)
+            # waiting for a reaction to be added - times out after x seconds, 60 in this
+            # example
+            if str(reaction.emoji) == "📌":
+                await message.remove_reaction(reaction, user)
+                await message.remove_reaction("❌", bot.user)
+                break
+            elif str(reaction.emoji) == "❌":
+                await message.remove_reaction(reaction, user)
+                raise asyncio.TimeoutError
+            else:
+                await message.remove_reaction(reaction, user)
+        except asyncio.TimeoutError:
+            await message.delete()
+            break
