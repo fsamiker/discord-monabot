@@ -4,7 +4,7 @@ async def paginate_embed(bot, ctx, pages):
     total_pages = len(pages)
     cur_page = 1
     cur_embed = pages[0]
-    help_note = 'You can also type m!help category for more info on a category.'
+    help_note = 'Click on ◀️▶️ to scroll pages. Click on ❌ to close help menu'
     cur_embed.set_footer(text=f'Page: {cur_page}/{total_pages}\n{help_note}')
     message = await ctx.send(embed=cur_embed)
     # getting the message object for editing and reacting
