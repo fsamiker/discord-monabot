@@ -153,7 +153,11 @@ Example Usage:
         embed.add_field(name='Region', value=character.region)
         embed.add_field(name='Birthday', value=character.birthday)
         embed.add_field(name='Affiliation', value=character.affiliation)
-        embed.add_field(name='Special Dish', value=character.special_dish.name)
+        if character.special_dish:
+            dish = character.special_dish.name
+        else:
+            dish = 'Unknown'
+        embed.add_field(name='Special Dish', value=dish)
         embed.add_field(name='\u200b', value='\u200b')
         return embed
 
