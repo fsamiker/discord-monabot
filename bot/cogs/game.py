@@ -274,9 +274,9 @@ class Game(commands.Cog, name='DiscordFun'):
                     msg += 'Morax did not take kindly to you picking on the weak. You have been struck by earth from above!'
                 # Trip chance
                 else:
-                    self_dmg = user.level*self.TRIP_DAMAGE
+                    self_dmg = random.randint(user.level*50, user.level*self.TRIP_DAMAGE)
                     user.health -= self_dmg
-                    msg += f'Oops! {ctx.author.display_name} tripped on a Cor Lapis and took {user.level*self.TRIP_DAMAGE} damage'
+                    msg += f'Oops! {ctx.author.display_name} tripped on a Cor Lapis and took {self_dmg} damage'
                 user = self.check_death(user)
                 if not user.health:
                     respawn_time = self.get_respawn_time(ctx, user)
@@ -648,8 +648,8 @@ class Game(commands.Cog, name='DiscordFun'):
         if user.last_check+timedelta(seconds=self.REGEN_RATE) <= now:
             stamina_gain = int(((now-user.last_check).seconds/self.REGEN_RATE*self.STAMINA_REGEN)+user.level)
             user.stamina += stamina_gain
-            #health_gain = int((now-user.last_check).seconds/self.REGEN_RATE*self.HEALTH_REGEN*user.level)
-            #user.health += health_gain
+            health_gain = int((now-user.last_check).seconds/self.REGEN_RATE*self.HEALTH_REGEN*user.level)
+            user.health += health_gain
             if user.stamina >= user.max_stamina:
                 user.stamina = user.max_stamina
             if user.health >= user.max_health:
