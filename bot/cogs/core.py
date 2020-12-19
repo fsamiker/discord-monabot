@@ -12,7 +12,7 @@ class Core(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'{self.bot.user.name} has connected to Discord!')
-        await self.bot.change_presence(activity=discord.Game(name="Genshin Impact"))
+        await self.bot.change_presence(activity=discord.Game(name="Type m!help"))
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
