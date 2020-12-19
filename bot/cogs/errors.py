@@ -72,8 +72,8 @@ class ErrorHandler(commands.Cog):
 
         if isinstance(error, commands.NoPrivateMessage):
             try:
-                embed = discord.Embed(title=f"{ctx.command} error",
-                                    description="This command cannot be used in direct messages",
+                embed = discord.Embed(title=f"Command error",
+                                    description=f" `{self.bot.command_prefix}` command cannot be used in direct messages",
                                     color=discord.Color.red())
                 await ctx.author.send(embed=embed)
             except discord.Forbidden:
@@ -82,15 +82,17 @@ class ErrorHandler(commands.Cog):
 
         if isinstance(error, commands.UserInputError) or isinstance(error, commands.CheckFailure):
             embed = discord.Embed(title=f"Command error",
-                                description=f"Invalid user input. "
+                                description=f"Invalid user input.\n"
                                             f"Please use `{self.bot.command_prefix}help {ctx.command}` "
                                             f"for command details",
                                 color=discord.Color.red())
-            await ctx.send(embed=embed)
+            file=discord.File('assets/genshin/icons/i_unimpressed_paimon.png', filename='image.png')
+            embed.set_thumbnail(url='attachment://image.png')
+            await ctx.send(embed=embed, file=file)
             return
 
         if isinstance(error, commands.DisabledCommand):
-            await ctx.send(f'{ctx.command} has been disabled.')
+            await ctx.send(f'Command error has been disabled.')
         elif isinstance(error, commands.NoPrivateMessage):
             try:
                 await ctx.author.send(f'{ctx.command} can not be used in Private Messages.')
@@ -103,11 +105,13 @@ class ErrorHandler(commands.Cog):
                 await ctx.send('I could not find that member. Please try again.')
             else:
                 embed = discord.Embed(title=f"Command error",
-                                description=f"Invalid user input. "
+                                description=f"Invalid user input.\n"
                                             f"Please use `{self.bot.command_prefix}help {ctx.command}` "
                                             f"for command details",
                                 color=discord.Color.red())
-                await ctx.send(embed=embed)
+                file=discord.File('assets/genshin/icons/i_unimpressed_paimon.png', filename='image.png')
+                embed.set_thumbnail(url='attachment://image.png')
+                await ctx.send(embed=embed, file=file)
                 return
 
         else:
