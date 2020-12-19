@@ -80,18 +80,11 @@ class ErrorHandler(commands.Cog):
                 pass
             return
 
-        if isinstance(error, commands.UserInputError):
+        if isinstance(error, commands.UserInputError) or isinstance(error, commands.CheckFailure):
             embed = discord.Embed(title=f"Command error",
                                 description=f"Invalid user input. "
                                             f"Please use `{self.bot.command_prefix}help {ctx.command}` "
                                             f"for command details",
-                                color=discord.Color.red())
-            await ctx.send(embed=embed)
-            return
-
-        if isinstance(error, commands.CheckFailure):
-            embed = discord.Embed(title=f"{ctx.command} error",
-                                description=f"You do not have permission to use this command",
                                 color=discord.Color.red())
             await ctx.send(embed=embed)
             return

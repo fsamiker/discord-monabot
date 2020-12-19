@@ -1,3 +1,4 @@
+from bot.utils.checks import has_args
 from discord.ext.commands.cooldowns import BucketType
 from data.genshin.models import Food, Material
 from data.db import session_scope
@@ -12,6 +13,7 @@ class Materials(commands.Cog):
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
+    @commands.check(has_args)
     async def material(self, ctx, *args):
         """Get Material Details"""
 
@@ -36,6 +38,7 @@ Example Usage:
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
+    @commands.check(has_args)
     async def food(self, ctx, *args):
         """Get Food Details"""
 

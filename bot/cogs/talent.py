@@ -1,3 +1,4 @@
+from bot.utils.checks import has_args
 from discord.ext.commands.cooldowns import BucketType
 from data.genshin.models import Character, Talent, TalentLevel
 from data.db import session_scope
@@ -15,6 +16,7 @@ class Talents(commands.Cog):
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
+    @commands.check(has_args)
     async def talent(self, ctx, *args):
         """Get Talent Details"""
 
@@ -38,6 +40,7 @@ Example Usage:
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
+    @commands.check(has_args)
     async def talentmaterial(self, ctx, name:str, starting_lvl=1, target_lvl=10):
         """Get Talent materials required"""
 

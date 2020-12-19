@@ -1,3 +1,4 @@
+from bot.utils.checks import has_args
 import discord
 from discord.ext.commands.cooldowns import BucketType
 from data.monabot.models import Reminder, Resin
@@ -67,6 +68,7 @@ class Reminders(commands.Cog):
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
+    @commands.check(has_args)
     async def remindme(self, ctx, *args):
         """Sets reminder"""
 

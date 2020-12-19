@@ -1,3 +1,4 @@
+from bot.utils.checks import has_args
 from discord.ext.commands.cooldowns import BucketType
 from data.genshin.models import Character, CharacterLevel
 from data.db import session_scope
@@ -15,6 +16,7 @@ class Characters(commands.Cog):
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
+    @commands.check(has_args)
     async def character(self, ctx, name: str, option: str='default'):
         """Get Character Details"""
 
@@ -55,6 +57,7 @@ Example Usage:
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
+    @commands.check(has_args)
     async def ascensionmaterial(self, ctx, name: str, starting_lvl=1, target_lvl=90):
         """Get Ascension Materials needed"""
 

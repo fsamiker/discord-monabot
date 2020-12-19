@@ -1,3 +1,4 @@
+from bot.utils.checks import has_args
 from discord.ext.commands.cooldowns import BucketType
 from data.genshin.models import Enemy
 from data.db import session_scope
@@ -12,6 +13,7 @@ class Enemies(commands.Cog):
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
+    @commands.check(has_args)
     async def enemy(self, ctx, *args):
         """Get Enemy/Boss Details"""
 

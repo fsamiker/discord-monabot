@@ -1,3 +1,4 @@
+from bot.utils.checks import has_args
 from discord.ext.commands.cooldowns import BucketType
 from data.genshin.models import Domain, DomainLevel
 from data.db import session_scope
@@ -13,6 +14,7 @@ class Domains(commands.Cog):
         self.bot = bot
 
     @commands.command()
+    @commands.check(has_args)
     @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def domain(self, ctx, *args):
         """Get Domain Details"""
