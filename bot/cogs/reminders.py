@@ -29,7 +29,10 @@ class Reminders(commands.Cog):
             now = datetime.utcnow()
             if self._next_reminder is not None and self._next_reminder.get('when') < now:
                 user = self.bot.get_user(self._next_reminder.get('discord_id'))
-                await user.send(self._next_reminder.get('message'))
+                try:
+                    await user.send(self._next_reminder.get('message'))
+                except Exception:
+                    print(f'Failed to send reminder to {user}')
                 self._delete_reminder(self._next_reminder.get('id'))
                 self._get_next_reminder()
             await asyncio.sleep(1)
