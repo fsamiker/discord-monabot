@@ -1,7 +1,7 @@
 GENSHIN_DATABASE_MD = '''
 Access curated details on all things genshin from [Genshin Wiki](https://genshin-impact.fandom.com/wiki/Genshin_Impact_Wiki)
 
-Run m!help genshin database or m!<command name> for more details on each command
+Run `m!help` genshin database or `m!<command name>` for more details on each command
 
 **Character:**
 ```
@@ -31,7 +31,7 @@ enemy               Get enemy/boss details
 GENSHIN_DISCORD_MINIGAME = '''
 Genshin minigame right on discord!
 
-Run m!help genshin minigame or m!<command name> for more details on each command
+Run `m!help genshin minigame` or `m!<command name>` for more details on each command
 
 **Start Game:**
 ```
@@ -60,7 +60,7 @@ REMINDERS_HELP = '''
 Set reminders for genshin related activities.
 Never lose out on resin
 
-Run m!help reminders for or m!<command name> more details on each command
+Run `m!help reminders` for or `m!<command name>` more details on each command
 
 **Reminders:**
 ```
@@ -79,7 +79,7 @@ cancelreminder      Cancel an active reminder
 RESIN_STATUS = '''
 Check the state of your resin in genshin
 
-Run m!help resin status or m!<command name> for more details on each command
+Run `m!help resin status` or `m!<command name>` for more details on each command
 
 **Commands:**
 ```

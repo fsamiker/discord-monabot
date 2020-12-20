@@ -68,7 +68,6 @@ class Reminders(commands.Cog):
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
-    @commands.check(has_args)
     async def remindme(self, ctx, *args):
         """Sets reminder"""
 
@@ -85,6 +84,9 @@ Example Usage:
 \u2022 m!remindme mineral
 \u2022 m!remindme artifact```'''
             await ctx.send(f'{message}\n{examples}')
+
+        if not args:
+            raise commands.UserInputError
 
         option = args[0].lower()
         flair = self.bot.get_cog("Flair")

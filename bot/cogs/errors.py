@@ -80,7 +80,7 @@ class ErrorHandler(commands.Cog):
                 pass
             return
 
-        if isinstance(error, commands.UserInputError) or isinstance(error, commands.CheckFailure):
+        if isinstance(error, commands.UserInputError):
             embed = discord.Embed(title=f"Command error",
                                 description=f"Invalid user input.\n"
                                             f"Please use `{self.bot.command_prefix}help {ctx.command}` "

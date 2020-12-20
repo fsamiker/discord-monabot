@@ -48,7 +48,7 @@ async def paginate_embed(bot, ctx, pages):
             # ending the loop if user doesn't react after x seconds
 
 async def send_temp_embed(bot, ctx, embed, discord_file=None):
-    extra_footer = f'\nThis embed will be auto-deleted in 60 seconds\nClick 📌 to keep it here or ❌ to close it'
+    extra_footer = f'\nThis embed will expire in 60 seconds\nClick 📌 to keep it here or ❌ to close it'
     if type(embed.footer.text) == str and extra_footer not in embed.footer.text:
         embed.set_footer(text=(embed.footer.text + extra_footer))
     else:
