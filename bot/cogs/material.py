@@ -13,7 +13,6 @@ class Materials(commands.Cog):
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
-    @commands.check(has_args)
     async def material(self, ctx, *args):
         """Get Material Details"""
 
@@ -24,6 +23,9 @@ Example Usage:
 \u2022 m!material dandelion seed
 \u2022 m!material sharp arrowhead```'''
             await ctx.send(f'{message}\n{examples}')
+
+        if not args:
+            raise commands.UserInputError
 
 
         material_name = ' '.join([w.capitalize() for w in args])

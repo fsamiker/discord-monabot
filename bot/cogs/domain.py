@@ -14,7 +14,6 @@ class Domains(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    @commands.check(has_args)
     @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def domain(self, ctx, *args):
         """Get Domain Details"""
@@ -29,6 +28,9 @@ Example Usage:
 \u2022 m!domain forsaken rift 3
 \u2022 m!domain ceceilia garden 3 monday```'''
             await ctx.send(f'{message}\n{examples}')
+
+        if not args:
+            raise commands.UserInputError
 
         if ctx.guild:
             server_region = ctx.guild.region.name

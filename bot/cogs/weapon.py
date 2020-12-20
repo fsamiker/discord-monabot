@@ -16,7 +16,6 @@ class Weapons(commands.Cog):
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
-    @commands.check(has_args)
     async def weapon(self, ctx, *args):
         """Get Weapon Details"""
 
@@ -27,6 +26,9 @@ Example Usage:
 \u2022 m!weapon Amos' Bow
 \u2022 m!weapon prototype rancour```'''
             await ctx.send(f'{message}\n{examples}')
+
+        if not args:
+            raise commands.UserInputError
 
         name = ' '.join([w.capitalize() for w in args])
 
@@ -41,7 +43,6 @@ Example Usage:
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
-    @commands.check(has_args)
     async def weaponmaterial(self, ctx, *args):
         """Get Weapon Details"""
 
@@ -55,6 +56,9 @@ Example Usage:
 \u2022 m!weaponmaterial skyward harp 5 10```'''
 
             await ctx.send(f'{message}\n{examples}')
+            
+        if not args:
+            raise commands.UserInputError
 
         name = ' '.join([w.capitalize() for w in args])
         starting_lvl = 1

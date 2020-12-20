@@ -16,7 +16,6 @@ class Talents(commands.Cog):
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
-    @commands.check(has_args)
     async def talent(self, ctx, *args):
         """Get Talent Details"""
 
@@ -27,6 +26,9 @@ Example Usage:
 \u2022 m!talent sharpshooter
 \u2022 m!talent Kaboom!```'''
             await ctx.send(f'{message}\n{examples}')
+
+        if not args:
+            raise commands.UserInputError
 
         talent_name = ' '.join([w.capitalize() for w in args])
         with session_scope() as s:

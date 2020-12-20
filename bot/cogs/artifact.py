@@ -13,7 +13,6 @@ class Artifacts(commands.Cog):
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
-    @commands.check(has_args)
     async def artifact(self, ctx, *args):
         """Get Artifact Set Details"""
 
@@ -25,6 +24,8 @@ Example Usage:
 \u2022 m!artifact berserker```'''
             await ctx.send(f'{message}\n{examples}')
 
+        if not args:
+            raise commands.UserInputError
 
         name = ' '.join([w.capitalize() for w in args])
         with session_scope() as s:
