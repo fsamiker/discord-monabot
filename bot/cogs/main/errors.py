@@ -1,8 +1,11 @@
+from bot.utils.error import NoResultError
 from datetime import datetime, timedelta
 import discord
 from discord.ext import commands
 import traceback
 import sys
+
+import sqlalchemy
 
 class ErrorHandler(commands.Cog):
 
@@ -44,17 +47,11 @@ class ErrorHandler(commands.Cog):
                 fmt = '{}, and {}'.format("**, **".join(missing[:-1]), missing[-1])
             else:
                 fmt = ' and '.join(missing)
-            embed = discord.Embed(title=f"{ctx.command} error",
-                                description='I need the **{}** permission(s) to run this command.'.format(fmt),
-                                color=discord.Color.red())
-            embed.set_footer(text=f"{error}")
-            await ctx.send(embed=embed)
+            await self.send_error_embed(ctx, f"Missing Permissions Error", '**{}** permission(s) needed to run `{}` command.'.format(fmt, ctx.command))
             return
 
         if isinstance(error, commands.CommandOnCooldown) or isinstance(error, commands.MaxConcurrencyReached):
-            embed = discord.Embed(description=f"Due to server load, cooldown has been applied.\nTry again in a little while",
-                                color=discord.Color.red())
-            await ctx.send(embed=embed)
+            await self.send_error_embed(ctx, 'Server is Busy', f"Due to server load, cooldown has been applied.\nTry again in a little while")
             return
 
         if isinstance(error, commands.MissingPermissions):
@@ -63,58 +60,57 @@ class ErrorHandler(commands.Cog):
                 fmt = '{}, and {}'.format("**, **".join(missing[:-1]), missing[-1])
             else:
                 fmt = ' and '.join(missing)
-            _message = 'You need the **{}** permission(s) to use this command.'.format(fmt)
-            embed = discord.Embed(title=f"{ctx.command} error",
-                                description=f"{_message}",
-                                color=discord.Color.red())
-            await ctx.send(embed=embed)
+            await self.send_error_embed(ctx, f"Missing Permissions Error", '**{}** permission(s) needed to run `{}` command.'.format(fmt, ctx.command))
             return
 
         if isinstance(error, commands.NoPrivateMessage):
             try:
-                embed = discord.Embed(title=f"Command error",
-                                    description=f" `{self.bot.command_prefix}` command cannot be used in direct messages",
-                                    color=discord.Color.red())
-                await ctx.author.send(embed=embed)
+                await self.send_error_embed(ctx, f"Command Error", f" `{ctx.command}` command cannot be used in direct messages")
             except discord.Forbidden:
                 pass
             return
 
         if isinstance(error, commands.UserInputError):
-            embed = discord.Embed(title=f"Command error",
-                                description=f"Invalid user input.\n"
-                                            f"Please use `{self.bot.command_prefix}help {ctx.command}` "
-                                            f"for command details",
-                                color=discord.Color.red())
-            file=discord.File('assets/genshin/icons/i_unimpressed_paimon.png', filename='image.png')
-            embed.set_thumbnail(url='attachment://image.png')
-            await ctx.send(embed=embed, file=file)
+            await self.send_error_embed(ctx, f"Command Error",
+             description=f"Invalid user input.\n"
+                         f"Please use `{self.bot.command_prefix}help {ctx.command}` "
+                         f"for command details")
+            return
+
+        if isinstance(error, NoResultError):
+            await self.send_error_embed(ctx, f"No Results", f"Could not find results for\n`{ctx.message.content}`")
             return
 
         if isinstance(error, commands.DisabledCommand):
-            await ctx.send(f'Command error has been disabled.')
+            await self.send_error_embed(ctx, f"Disabled Command", "Command is temporarily unavailable at the moment")
         elif isinstance(error, commands.NoPrivateMessage):
             try:
-                await ctx.author.send(f'{ctx.command} can not be used in Private Messages.')
+                await self.send_error_embed(ctx, f"Command Error", f" `{ctx.command}` command cannot be used in private messages")
             except discord.HTTPException:
                 pass
 
         # For this error example we check to see where it came from...
         elif isinstance(error, commands.BadArgument):
             if ctx.command.qualified_name == 'tag list':  # Check if the command being invoked is 'tag list'
-                await ctx.send('I could not find that member. Please try again.')
+                await self.send_error_embed(ctx, "Invalid Member", "Could not find tagged member in channel")
             else:
-                embed = discord.Embed(title=f"Command error",
-                                description=f"Invalid user input.\n"
-                                            f"Please use `{self.bot.command_prefix}help {ctx.command}` "
-                                            f"for command details",
-                                color=discord.Color.red())
-                file=discord.File('assets/genshin/icons/i_unimpressed_paimon.png', filename='image.png')
-                embed.set_thumbnail(url='attachment://image.png')
-                await ctx.send(embed=embed, file=file)
+                await self.send_error_embed(
+                    ctx,
+                    f"Command Error",
+                    description=f"Invalid user input.\n"
+                                f"Please use `{self.bot.command_prefix}help {ctx.command}` "
+                                f"for command details")
                 return
 
         else:
             # All other Errors not returned come here. And we can just print the default TraceBack.
             traceback.print_exception(type(error), error, error.__traceback__, file=None)
             pass
+
+    async def send_error_embed(self, ctx, title, description):
+        embed = discord.Embed(title=title,
+        description=description,
+        color=discord.Color.red())
+        file=discord.File('assets/genshin/icons/i_unimpressed_paimon.png', filename='image.png')
+        embed.set_thumbnail(url='attachment://image.png')
+        await ctx.send(embed=embed, file=file)

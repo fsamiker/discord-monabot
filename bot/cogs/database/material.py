@@ -1,10 +1,22 @@
-from bot.utils.checks import has_args
+from bot.utils.error import NoResultError
 from discord.ext.commands.cooldowns import BucketType
+from sqlalchemy.exc import SQLAlchemyError
 from data.genshin.models import Food, Material
-from data.db import session_scope
 from  sqlalchemy.sql.expression import func
 from discord.ext import commands
 import discord
+from sqlalchemy.sql import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+def query_materials(session, name):
+    stmt = select(Material).filter(func.lower(Material.name)==func.lower(name))
+    mat = session.execute(stmt).scalars().first()
+    return mat
+
+def query_foods(session, name):
+    stmt = select(Food).filter(func.lower(Food.name)==func.lower(name))
+    food = session.execute(stmt).scalars().first()
+    return food
 
 class Materials(commands.Cog):
 
@@ -16,51 +28,34 @@ class Materials(commands.Cog):
     async def material(self, ctx, *args):
         """Get Material Details"""
 
-        async def usage(message):
-            examples = '''```Command: material <material name>
-
-Example Usage:
-\u2022 m!material dandelion seed
-\u2022 m!material sharp arrowhead```'''
-            await ctx.send(f'{message}\n{examples}')
-
         if not args:
             raise commands.UserInputError
 
 
         material_name = ' '.join([w.capitalize() for w in args])
-        with session_scope() as s:
-            m = s.query(Material).filter(func.lower(Material.name)==func.lower(material_name)).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            m = await s.run_sync(query_materials, name=material_name)
             if m:
                 file = discord.File(m.icon_url, filename='image.png')
                 embed = self.get_material_basic_info_embed(m)
                 await ctx.send(file=file, embed=embed)
             else:
-                await ctx.send(f'Could not find material "{material_name}"')
+                raise NoResultError
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
-    @commands.check(has_args)
     async def food(self, ctx, *args):
         """Get Food Details"""
 
-        async def usage(message):
-            examples = '''```Command: food <material name>
-
-Example Usage:
-\u2022 m!material apple
-\u2022 m!material mysterious bolognese```'''
-            await ctx.send(f'{message}\n{examples}')
-
         food_name = ' '.join([w.capitalize() for w in args])
-        with session_scope() as s:
-            f = s.query(Food).filter(func.lower(Food.name)==func.lower(food_name)).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            f = await s.run_sync(query_foods, name=food_name)
             if f:
                 file = discord.File(f.icon_url, filename='image.png')
                 embed = self.get_food_basic_info_embed(f)
                 await ctx.send(file=file, embed=embed)
             else:
-                await ctx.send(f'Could not find food "{food_name}"')
+                raise NoResultError
 
     def get_material_basic_info_embed(self, material):
         desc = ''

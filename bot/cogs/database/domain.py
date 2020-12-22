@@ -1,12 +1,31 @@
-from bot.utils.checks import has_args
+from bot.utils.error import NoResultError
 from discord.ext.commands.cooldowns import BucketType
+from sqlalchemy.exc import SQLAlchemyError
 from data.genshin.models import Domain, DomainLevel
-from data.db import session_scope
-from  sqlalchemy.sql.expression import func
 from sqlalchemy import or_
 from discord.ext import commands
-from datetime import datetime
 import discord
+from sqlalchemy.sql import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+def query_domain(session, name):
+    stmt = select(Domain).options(selectinload(Domain.levels)).filter(Domain.name.ilike(f'%{name}%'))
+    dom = session.execute(stmt).scalars().first()
+    return dom
+
+def query_domainlvl(session, dom_id, lvl, day):
+    if lvl and day:
+        stmt = select(DomainLevel).options(selectinload(DomainLevel.material_drops), selectinload(DomainLevel.artifact_drops)).filter(DomainLevel.domain_id==dom_id, DomainLevel.level==lvl, or_(DomainLevel.day==day, DomainLevel.day==None))
+    elif lvl > 0:
+        stmt = select(DomainLevel).options(selectinload(DomainLevel.material_drops), selectinload(DomainLevel.artifact_drops)).filter(DomainLevel.domain_id==dom_id, DomainLevel.level==lvl, or_(DomainLevel.day=='Sunday', DomainLevel.day==None))
+    elif day:
+        stmt = select(DomainLevel).options(selectinload(DomainLevel.material_drops), selectinload(DomainLevel.artifact_drops)).filter(DomainLevel.domain_id==dom_id, or_(DomainLevel.day==day, DomainLevel.day==None)).order_by(DomainLevel.level.desc())
+    else:
+        stmt = select(DomainLevel).options(selectinload(DomainLevel.material_drops), selectinload(DomainLevel.artifact_drops)).filter(DomainLevel.domain_id==dom_id, or_(DomainLevel.day=='Sunday', DomainLevel.day==None)).order_by(DomainLevel.level.desc())
+    domlvl = session.execute(stmt).scalars().first()
+    return domlvl
+
 
 class Domains(commands.Cog):
 
@@ -18,24 +37,8 @@ class Domains(commands.Cog):
     async def domain(self, ctx, *args):
         """Get Domain Details"""
 
-        async def usage(message):
-            examples = '''```Command: domain <domain name> optional: <level> <day of the week>
-\u2022 level : Domain Floor Level (Default: Max Level)
-\u2022 day of the week : Day of the week (Default: Sunday for domains dependant on days) 
-
-Example Usage:
-\u2022 m!domain Midsummer Courtyard
-\u2022 m!domain forsaken rift 3
-\u2022 m!domain ceceilia garden 3 monday```'''
-            await ctx.send(f'{message}\n{examples}')
-
         if not args:
             raise commands.UserInputError
-
-        if ctx.guild:
-            server_region = ctx.guild.region.name
-        else:
-            server_region = 'GMT'
 
         # Check Input
         lvl = 0
@@ -58,30 +61,17 @@ Example Usage:
                 pass
         
         name = name.title()
-        with session_scope() as s:
-            dom = s.query(Domain).filter(Domain.name.ilike(f'%{name}%')).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            dom = await s.run_sync(query_domain, name=name)
             if not dom:
-                await ctx.send(f'Could not find Domain "{name}"')
-                return
-            if lvl and day:
-                domlvl = s.query(DomainLevel).filter(DomainLevel.domain_id==dom.id, DomainLevel.level==lvl, or_(DomainLevel.day==day, DomainLevel.day==None)).first()
-            elif lvl > 0:
-                domlvl = s.query(DomainLevel).filter(DomainLevel.domain_id==dom.id, DomainLevel.level==lvl, or_(DomainLevel.day=='Sunday', DomainLevel.day==None)).first()
-            elif day:
-                domlvl = s.query(DomainLevel).filter(DomainLevel.domain_id==dom.id, or_(DomainLevel.day==day, DomainLevel.day==None)).order_by(DomainLevel.level.desc()).first()
-            else:
-                domlvl = s.query(DomainLevel).filter(DomainLevel.domain_id==dom.id, or_(DomainLevel.day=='Sunday', DomainLevel.day==None)).order_by(DomainLevel.level.desc()).first()
+                raise NoResultError
+            domlvl = await s.run_sync(query_domainlvl, dom_id=dom.id, lvl=lvl, day=day)
             if domlvl:
                 file = discord.File(dom.icon_url, filename='image.png')
                 embed = self.get_domain_info_embed(domlvl)
                 await ctx.send(file=file, embed=embed)
             else:
-                error = f'Could not find Domain "{name}"'
-                if lvl:
-                    error += f' Floor Lvl {lvl}'
-                if day:
-                    error += f' - {lvl}'
-                await ctx.send(error)
+                raise NoResultError
 
         
     def get_domain_info_embed(self, domainlvl):

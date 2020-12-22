@@ -1,10 +1,30 @@
-from bot.utils.checks import has_args
+from bot.utils.error import NoResultError
 from discord.ext.commands.cooldowns import BucketType
-from data.genshin.models import Character, CharacterLevel
-from data.db import session_scope
+from data.genshin.models import Character, CharacterLevel, CharacterMaterial
 from discord.ext import commands
+from sqlalchemy.sql import select
+from sqlalchemy.orm import selectinload
 import discord
-import os
+from sqlalchemy.ext.asyncio import AsyncSession
+
+def query_character(session, name):
+    stmt = select(Character).\
+        options(
+            selectinload(Character.special_dish),
+            selectinload(Character.talents),
+             selectinload(Character.levels),
+              selectinload(Character.constellations)).\
+                  filter_by(name=name)
+    char = session.execute(stmt).scalars().first()
+    return char
+
+def query_ascension(session, char_id, starting_lvl, target_lvl):
+    stmt = select(CharacterLevel).\
+        options(selectinload(CharacterLevel.materials).selectinload(CharacterMaterial.material)).\
+            filter(CharacterLevel.character_id==char_id, CharacterLevel.level>=starting_lvl, CharacterLevel.level <=target_lvl).\
+            order_by(CharacterLevel.level.asc())
+    ascension_list = session.execute(stmt).scalars().all()
+    return ascension_list
 
 class Characters(commands.Cog):
 
@@ -19,29 +39,16 @@ class Characters(commands.Cog):
     async def character(self, ctx, name: str, option: str='default'):
         """Get Character Details"""
 
-        async def usage(message):
-            examples = '''```Command: character <character name> optional: <option>          
-Options: \u2022 default - Character basic information
-         \u2022 talents - Character talent list
-         \u2022 constellations - Character constellations list
-
-Example Usage:
-\u2022 m!character amber
-\u2022 m!character bennett talents
-\u2022 m!character keqing constellations```'''
-            await ctx.send(f'{message}\n{examples}')
-
         option = option.lower()
         name = name.capitalize()
 
         if option not in ['default', 'talents', 'constellations']:
-            await usage('Invalid command')
+            raise commands.BadArgument
 
-        with session_scope() as s:
-            char = s.query(Character).filter_by(name=name).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            char = await s.run_sync(query_character, name=name)
             if char is None:
-                await self.unknown_character(ctx, name)
-                return
+                raise NoResultError
             icon_file = discord.File(char.icon_url, filename='image.png')
             if option == 'default':
                 embed = self.get_character_basic_embed(char)
@@ -59,48 +66,31 @@ Example Usage:
     async def ascensionmaterial(self, ctx, name: str, starting_lvl=1, target_lvl=90):
         """Get Ascension Materials needed"""
 
-        async def usage(message):
-            examples = '''```Command: ascensionmaterial <character name> optional:<start lvl> <end lvl>          
-Start Lvl: Start counting from character level (Default:1)
-End Lvl: Stop counting at character level (Default:90)
-
-Example Usage:
-\u2022 m!ascensionmaterial amber
-\u2022 m!ascensionmaterial amber 1 90
-\u2022 m!ascensionmaterial amber 45 87```'''
-            await ctx.send(f'{message}\n{examples}')
-
         name = name.title()
         # Check inputs
         try:
             starting_lvl = int(starting_lvl)
             target_lvl = int(target_lvl)
         except:
-            await usage('Invalid command')
-            return
+            raise commands.BadArgument
 
         if starting_lvl > target_lvl or starting_lvl == target_lvl:
-            await usage('Target Level should be higher than Starting Level')
+            await self.send_invalid_input(ctx, '`target lvl` should be higher than `starting lvl`')
             return
         if target_lvl > self.MAX_CHAR_LVL:
-            await usage(f'Current character max level is {self.MAX_CHAR_LVL}')
+            await self.send_invalid_input(ctx, f'Character max level is `{self.MAX_CHAR_LVL}`')
             return
         if starting_lvl < self.MIN_CHAR_LVL:
-            await usage(f'Hey! Are you awake? Character levels start at {self.MIN_CHAR_LVL}')
+            await self.send_invalid_input(ctx, f'Character levels start at `{self.MIN_CHAR_LVL}`')
             return
 
-        with session_scope() as s:
-            char = s.query(Character).filter_by(name=name).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            char = await s.run_sync(query_character, name=name)
             if char is None:
-                await self.unknown_character(ctx, name)
-                return
-            asc_list = s.query(CharacterLevel).\
-                filter(CharacterLevel.character_id==char.id, CharacterLevel.level>=starting_lvl, CharacterLevel.level <=target_lvl).\
-                    order_by(CharacterLevel.level.asc()).all()
-
+                raise NoResultError
+            asc_list = await s.run_sync(query_ascension, char_id=char.id, starting_lvl=starting_lvl, target_lvl=target_lvl)
             if not asc_list:
-                await ctx.send(f'There is no ascension available in the lvl range {starting_lvl} to {target_lvl}')
-                return
+                raise NoResultError
 
             if len(asc_list) == 1:
                 footer = f'\nLevel: {asc_list[0].level}'
@@ -111,9 +101,6 @@ Example Usage:
             file = discord.File(char.icon_url, filename='image.png')
             await ctx.send(file=file, embed=embed)
             return
-
-    async def unknown_character(self, ctx, name):
-        await ctx.send(f'"{name}" does not seem to be a known character in Tevyat')
 
     def get_material_embed(self, title, ascension_list, footer, color):
         mora = sum([a.cost for a in ascension_list])
@@ -192,3 +179,7 @@ Example Usage:
 
         embed.set_thumbnail(url='attachment://image.png')
         return embed
+
+    async def send_invalid_input(self, ctx, reason):
+        desc = f'Invalid user input.\n{reason}\nPlease use `{self.bot.command_prefix}help {ctx.command}` for command details'
+        await self.bot.get_cog('ErrorHandler').send_error_embed(ctx, 'Command Error', desc)

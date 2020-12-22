@@ -1,10 +1,25 @@
-from bot.utils.checks import has_args
+from bot.utils.error import NoResultError
 from discord.ext.commands.cooldowns import BucketType
-from data.genshin.models import Weapon, WeaponLevel
-from data.db import session_scope
+from sqlalchemy.exc import SQLAlchemyError
+from data.genshin.models import Weapon, WeaponLevel, WeaponMaterial
 from discord.ext import commands
 import discord
-import os
+from sqlalchemy.sql import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+def query_weapon(session, name):
+    stmt = select(Weapon).options(selectinload(Weapon.levels)).filter(Weapon.name.like(f'%{name}%'))
+    wp = session.execute(stmt).scalars().first()
+    return wp
+
+def query_weaponascension(session, weapon_id, starting_lvl, target_lvl):
+    stmt = select(WeaponLevel).\
+        options(selectinload(WeaponLevel.materials).selectinload(WeaponMaterial.material)).\
+            filter(WeaponLevel.weapon_id==weapon_id, WeaponLevel.level>=starting_lvl, WeaponLevel.level <=target_lvl).\
+            order_by(WeaponLevel.level.asc())
+    asc_list = session.execute(stmt).scalars().all()
+    return asc_list
 
 class Weapons(commands.Cog):
 
@@ -19,43 +34,24 @@ class Weapons(commands.Cog):
     async def weapon(self, ctx, *args):
         """Get Weapon Details"""
 
-        async def usage(message):
-            examples = '''```Command: weapon <weapon name>          
-
-Example Usage:
-\u2022 m!weapon Amos' Bow
-\u2022 m!weapon prototype rancour```'''
-            await ctx.send(f'{message}\n{examples}')
-
         if not args:
             raise commands.UserInputError
 
         name = ' '.join([w.capitalize() for w in args])
 
-        with session_scope() as s:
-            wp = s.query(Weapon).filter(Weapon.name.like(f'%{name}%')).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            wp = await s.run_sync(query_weapon, name=name)
             if wp:
                 file = discord.File(wp.icon_url, filename='image.png')
                 embed = self.get_weapon_info_embed(wp)
                 await ctx.send(file=file, embed=embed)
             else:
-                await ctx.send(f'Could not find weapon "{name}"')
+                raise NoResultError
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def weaponmaterial(self, ctx, *args):
         """Get Weapon Details"""
-
-        async def usage(message):
-            examples = '''```Command: weaponmaterial <weapon name> optional:<starting lvl> <target lvl>
-Starting Level: Start material count from not including current level (Default: 1)
-Starting Level: End material count to level (Default: 90)
-
-Example Usage:
-\u2022 m!weaponmaterial solar pearl
-\u2022 m!weaponmaterial skyward harp 5 10```'''
-
-            await ctx.send(f'{message}\n{examples}')
             
         if not args:
             raise commands.UserInputError
@@ -75,29 +71,24 @@ Example Usage:
             starting_lvl = int(starting_lvl)
             target_lvl = int(target_lvl)
         except:
-            await usage('Invalid command')
-            return
+            raise commands.BadArgument
 
         if starting_lvl > target_lvl or starting_lvl == target_lvl:
-            await usage('Target Level should be higher than Starting Level')
+            await self.send_invalid_input(ctx, '`target lvl` should be higher than `starting lvl`')
             return
         if target_lvl > self.MAX_WP_LVL:
-            await usage(f'Weapon max level is {self.MAX_WP_LVL}')
+            await self.send_invalid_input(ctx, f'Weapon max level is `{self.MAX_WP_LVL}`')
             return
         if starting_lvl < self.MIN_WP_LVL:
-            await usage(f'Hey! Are you awake? Weapon levels start at {self.MIN_WP_LVL}')
+            await self.send_invalid_input(ctx, f'Weapon levels start at `{self.MIN_WP_LVL}`')
             return
 
-        with session_scope() as s:
-            wp = s.query(Weapon).filter(Weapon.name.like(f'%{name}%')).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            wp = await s.run_sync(query_weapon, name=name)
             if wp:
-                asc_list = s.query(WeaponLevel).\
-                    filter(WeaponLevel.weapon_id==wp.id, WeaponLevel.level>=starting_lvl, WeaponLevel.level <=target_lvl).\
-                        order_by(WeaponLevel.level.asc()).all()
-
+                asc_list = await s.run_sync(query_weaponascension, weapon_id=wp.id, starting_lvl=starting_lvl, target_lvl=target_lvl)
                 if not asc_list:
-                    await ctx.send(f'There is no ascension available in the lvl range {starting_lvl} to {target_lvl}')
-                    return
+                    raise NoResultError
 
                 if len(asc_list) == 1:
                     footer = f'\nLevel: {asc_list[0].level}'
@@ -108,7 +99,7 @@ Example Usage:
                 file = discord.File(wp.icon_url, filename='image.png')
                 await ctx.send(file=file, embed=embed)
             else:
-                await ctx.send(f'Could not find weapon "{name}"')
+                raise NoResultError
 
     def get_weapon_info_embed(self, weapon):
         flair = self.bot.get_cog("Flair")
@@ -151,3 +142,7 @@ Example Usage:
             i += 1
         
         return embed
+
+    async def send_invalid_input(self, ctx, reason):
+        desc = f'Invalid user input.\n{reason}\nPlease use `{self.bot.command_prefix}help {ctx.command}` for command details'
+        await self.bot.get_cog('ErrorHandler').send_error_embed(ctx, 'Command Error', desc)

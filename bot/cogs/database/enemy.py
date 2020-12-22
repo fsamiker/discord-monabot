@@ -1,10 +1,17 @@
-from bot.utils.checks import has_args
+from bot.utils.error import NoResultError
 from discord.ext.commands.cooldowns import BucketType
+from sqlalchemy.exc import SQLAlchemyError
 from data.genshin.models import Enemy
-from data.db import session_scope
-from  sqlalchemy.sql.expression import func
 from discord.ext import commands
 import discord
+from sqlalchemy.sql import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+def query_enemy(session, name):
+    stmt = select(Enemy).options(selectinload(Enemy.material_drops)).filter(Enemy.name.ilike(f'%{name}%'))
+    enem = session.execute(stmt).scalars().first()
+    return enem
 
 class Enemies(commands.Cog):
 
@@ -16,26 +23,18 @@ class Enemies(commands.Cog):
     async def enemy(self, ctx, *args):
         """Get Enemy/Boss Details"""
 
-        async def usage(message):
-            examples = '''```Command: enemy <enemy name>
-
-Example Usage:
-\u2022 m!enemy hilichurls
-\u2022 m!enemy dvalin```'''
-            await ctx.send(f'{message}\n{examples}')
-
         if not args:
             raise commands.UserInputError
 
         enemy_name = ' '.join([w.capitalize() for w in args])
-        with session_scope() as s:
-            e = s.query(Enemy).filter(Enemy.name.like(f'%{enemy_name}%')).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            e = await s.run_sync(query_enemy, name=enemy_name)
             if e:
                 file = discord.File(e.icon_url, filename='image.png')
                 embed = self.get_enemy_info_embed(e)
                 await ctx.send(file=file, embed=embed)
             else:
-                await ctx.send(f'Could not find details on "{enemy_name}"')
+                raise NoResultError
 
     def get_enemy_info_embed(self, enemy):
         var = ''

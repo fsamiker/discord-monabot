@@ -1,10 +1,17 @@
-from bot.utils.checks import has_args
+from bot.utils.error import NoResultError
 from discord.ext.commands.cooldowns import BucketType
-from data.genshin.models import Artifact
-from data.db import session_scope
-from  sqlalchemy.sql.expression import func
+import sqlalchemy
+from data.genshin.models import Artifact, DomainLevel
 from discord.ext import commands
+from sqlalchemy.sql import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 import discord
+
+def query_artifact(session, name):
+    stmt = select(Artifact).options(selectinload(Artifact.domains).selectinload(DomainLevel.domain)).filter(Artifact.name.like(f'%{name}%'))
+    art = session.execute(stmt).scalars().first()
+    return art
 
 class Artifacts(commands.Cog):
 
@@ -15,27 +22,18 @@ class Artifacts(commands.Cog):
     @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def artifact(self, ctx, *args):
         """Get Artifact Set Details"""
-
-        async def usage(message):
-            examples = '''```Command: artifact <artifact name>
-
-Example Usage:
-\u2022 m!artifact gladiator's finale
-\u2022 m!artifact berserker```'''
-            await ctx.send(f'{message}\n{examples}')
-
         if not args:
             raise commands.UserInputError
 
         name = ' '.join([w.capitalize() for w in args])
-        with session_scope() as s:
-            art = s.query(Artifact).filter(Artifact.name.like(f'%{name}%')).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            art = await s.run_sync(query_artifact, name=name)
             if art:
                 file = discord.File(art.icon_url, filename='image.png')
                 embed = self.get_set_info_embed(art)
                 await ctx.send(file=file, embed=embed)
             else:
-                await ctx.send(f'Could not find material "{name}"')
+                raise NoResultError
 
     def get_set_info_embed(self, art):
         embed = discord.Embed(title=f'{art.name} Set', color=discord.Colour.gold())

@@ -1,10 +1,27 @@
-from bot.utils.checks import has_args
+from bot.utils.error import NoResultError
+from sqlalchemy.exc import SQLAlchemyError
+from bot.cogs.database.character import query_character
 from discord.ext.commands.cooldowns import BucketType
-from data.genshin.models import Character, Talent, TalentLevel
-from data.db import session_scope
-from bot.utils.text import get_texttable
+from data.genshin.models import Talent, TalentLevel, TalentMaterial
 from discord.ext import commands
 import discord
+from sqlalchemy.sql import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+
+def query_talent(session, name):
+    stmt = select(Talent).options(selectinload(Talent.levels), selectinload(Talent.character)).filter(Talent.name.ilike(f'%{name}%'))
+    tal = session.execute(stmt).scalars().first()
+    return tal
+
+def query_talentmaterial(session, tal_id, starting_lvl, target_lvl):
+    stmt = select(TalentLevel).\
+        options(selectinload(TalentLevel.materials).selectinload(TalentMaterial.material)).\
+            filter(TalentLevel.talent_id==tal_id, TalentLevel.level>=starting_lvl, TalentLevel.level <=target_lvl).\
+            order_by(TalentLevel.level.asc())
+    lvl_list = session.execute(stmt).scalars().all()
+    return lvl_list
 
 class Talents(commands.Cog):
 
@@ -19,42 +36,23 @@ class Talents(commands.Cog):
     async def talent(self, ctx, *args):
         """Get Talent Details"""
 
-        async def usage(message):
-            examples = '''```Command: talent <talent name>
-
-Example Usage:
-\u2022 m!talent sharpshooter
-\u2022 m!talent Kaboom!```'''
-            await ctx.send(f'{message}\n{examples}')
-
         if not args:
             raise commands.UserInputError
 
         talent_name = ' '.join([w.capitalize() for w in args])
-        with session_scope() as s:
-            t = s.query(Talent).filter_by(name=talent_name).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            t = await s.run_sync(query_talent, name=talent_name)
             if t:
                 file = discord.File(t.icon_url, filename='image.png')
                 embed = self.get_talent_basic_info_embed(t)
                 await ctx.send(file=file, embed=embed)
             else:
-                await ctx.send(f'Could not find talent "{talent_name}"')
+                raise NoResultError
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def talentmaterial(self, ctx, name:str, starting_lvl=1, target_lvl=10):
         """Get Talent materials required"""
-
-        async def usage(message):
-            examples = '''```Command: talentmaterial <character name> optional:<starting lvl> <target lvl>
-Starting Level: Start material count from not including current level (Default: 2)
-Starting Level: End material count to level (Default: 10)
-Note: 
-\u2022 Levels do not include constellation bonuses
-
-Example Usage:
-\u2022 m!talent keqing
-\u2022 m!talent bennett 8 10```'''
 
         name = name.title()
         # Check inputs
@@ -62,33 +60,27 @@ Example Usage:
             starting_lvl = int(starting_lvl)
             target_lvl = int(target_lvl)
         except:
-            await usage('Invalid command')
-            return
+            raise commands.BadArgument
 
         if starting_lvl > target_lvl or starting_lvl == target_lvl:
-            await usage('Target Level should be higher than Starting Level')
+            await self.send_invalid_input(ctx, '`target lvl` should be higher than `starting lvl`')
             return
         if target_lvl > self.MAX_TAL_LVL:
-            await usage(f'Current talent max level is {self.MAX_TAL_LVL} (Not including constellations')
+            await self.send_invalid_input(ctx, f'Talent max level is `{self.MAX_TAL_LVL}` (Not including constellations')
             return
         if starting_lvl < self.MIN_TAL_LVL:
-            await usage(f'Hey! Are you awake? Talent levels start at {self.MIN_TAL_LVL}')
+            await self.send_invalid_input(ctx, f'Talent levels start at `{self.MIN_TAL_LVL}`')
             return
 
-        with session_scope() as s:
-            char = s.query(Character).filter_by(name=name).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            char = await s.run_sync(query_character, name=name)
             if not char or not char.talents:
-                await ctx.send(f'Could not find details on anyone named "{name}" in my grimoire')
-                return
+                raise NoResultError
             tal = char.talents[0]
             char_emoji = self.bot.get_cog("Flair").get_emoji(tal.character.name)
-            lvl_list = s.query(TalentLevel).\
-                filter(TalentLevel.talent_id==tal.id, TalentLevel.level>=starting_lvl, TalentLevel.level <=target_lvl).\
-                    order_by(TalentLevel.level.asc()).all()
-
+            lvl_list = await s.run_sync(query_talentmaterial, tal_id = tal.id, starting_lvl=starting_lvl, target_lvl=target_lvl)
             if not lvl_list:
-                await ctx.send(f'There is no level up available for {char_emoji} {name} in range specified')
-                return
+                raise NoResultError
 
             if len(lvl_list) == 1:
                 footer = f'\nLevel: {lvl_list[0].level}'
@@ -137,3 +129,7 @@ Example Usage:
         embed.set_thumbnail(url='attachment://image.png')
         embed.set_footer(text=f'{talent.typing}')
         return embed
+
+    async def send_invalid_input(self, ctx, reason):
+        desc = f'Invalid user input.\n{reason}\nPlease use `{self.bot.command_prefix}help {ctx.command}` for command details'
+        await self.bot.get_cog('ErrorHandler').send_error_embed(ctx, 'Command Error', desc)
