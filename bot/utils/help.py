@@ -39,20 +39,23 @@ startadventure      Start your minigame profile
 ```
 **Misc Actions:**
 ```
+leaderboard         Check game leaderboard
 checkweather        Check daily ingame weather
 claimdaily          Claim daily primogems
 profile             Check game profile
 wish                Make a wish!
 primolvlup          Spend 3000 primogems and lvlup!
 switchactive        Switch active character
+checkabyss          Check Discord Abyss
 ```
 **Stamina Actions:**
 Commands that cost stamina
 ```
-explore (10)        You never know what you might find
-heal    (10)        Heal yourself
-attack  (15)        Attack a player!
-mug     (15)        Attempt to steal primogems
+explore     (10)    You never know what you might find
+heal        (10)    Heal yourself
+attack      (15)    Attack a player!
+mug         (15)    Attempt to steal primogems
+attackabyss (15)    Attack the abyss boss
 ```
 '''
 
@@ -274,7 +277,7 @@ m!checkreminders
 ```
 '''
 
-GENSHIN_CANCELKREMINDERS = '''
+GENSHIN_CANCEL_REMINDERS = '''
 Cancel an active reminder.
 Run m!checkreminders to get reminder id.
 
@@ -374,7 +377,7 @@ m!profile @Mona
 
 GENSHIN_GAME_SWITCH = '''
 Switch your active character with your bench characters if you have any.
-Active characters affect actions ingame
+Active characters affect actions ingame and helps you take advantage of the weather
 
 > m!switchactive <target character>
 
@@ -389,12 +392,12 @@ GENSHIN_GAME_WISH = '''
 You know the drill! Make a wish! 
 
 > m!wish optional: <times to wish>
+Note: Max 10 times at a time
 
 Example Usage:
 ```
 m!wish
 m!wish 10
-m!wish 420
 ```
 '''
 
@@ -410,13 +413,17 @@ m!primolvlup
 '''
 
 GENSHIN_GAME_EXPLORE = '''
-Explore the corners of digital tevyat and see what you find 
+Explore the corners of digital teyvat and see what you find
 
-> m!explore
+Stamina cost: 10
+
+> m!explore optional: <number of times>
+Note: Max 10 times at a time
 
 Example Usage:
 ```
 m!explore
+m!explore 10
 ```
 '''
 
@@ -437,6 +444,8 @@ GENSHIN_GAME_HEAL = '''
 Keep yourself healthy, heal yourself
 Chance to fully heal
 
+Stamina cost: 10
+
 > m!heal
 
 Example Usage:
@@ -449,11 +458,58 @@ GENSHIN_GAME_MUG = '''
 Attempt to steal some primogems from a player
 Bare your own consequences
 
+Stamina cost: 15
+
 > m!mug <Target User>
 
 Example Usage:
 ```
 m!mug @Someone
 m!mug @Mona
+```
+'''
+
+GENSHIN_GAME_CHECKABYSS = '''
+Check what lurks in the abyss.
+Attempt to slay any bosses that dares disrupt discord
+
+\u2022 Abyss resets every 4 days
+\u2022 Bosses spawned only last for 3 days
+
+Team up with you friends and try to defeat the boss.\n\u2022 The player that deals the killing blow will grant participants of their guild the winners pot!\n\u2022 Every other player that participated in taking down the boss will earn the consolation prize.
+
+> m!checkabyss
+
+Example Usage:
+```
+m!checkabyss
+```
+'''
+
+GENSHIN_GAME_ATTACKABYSS = '''
+Charge into the abyss and contribute to taking down the boss that lurks
+
+Stamina cost: 15
+
+> m!attackabyss
+
+Example Usage:
+```
+m!attackabyss
+```
+'''
+
+GENSHIN_GAME_LEADERBOARDS= '''
+Check the leaderboards in your guild or all across discord
+Options:
+\u2022 global
+\u2022 guild (default)
+
+> m!leaderboard optional:<option>
+
+Example Usage:
+```
+m!leaderboard
+m!leaderboard global
 ```
 '''

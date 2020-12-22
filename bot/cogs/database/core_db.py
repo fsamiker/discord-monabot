@@ -9,6 +9,6 @@ class Query(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        engine = create_async_engine(self.URI, echo=True,)
+        engine = create_async_engine(self.URI, echo=True)
         self.engine = engine
         print(f'Database connection ready!')

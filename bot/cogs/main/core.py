@@ -1,7 +1,7 @@
 from discord.ext.commands.cooldowns import BucketType
 from bot.utils.embeds import paginate_embed, send_temp_embed
 from discord.ext import commands
-from bot.utils.help import GENSHIN_CANCELKREMINDERS, GENSHIN_CHECKREMINDERS, GENSHIN_DATABASE_MD, GENSHIN_DB_ARTIFACT, GENSHIN_DB_CHAR, GENSHIN_DB_CHAR_ASC, GENSHIN_DB_DOMAIN, GENSHIN_DB_ENEMY, GENSHIN_DB_FOOD, GENSHIN_DB_MATERIAL, GENSHIN_DB_TAL, GENSHIN_DB_TAL_MAT, GENSHIN_DB_WEAPON, GENSHIN_DB_WEAPON_MAT, GENSHIN_DISCORD_MINIGAME, GENSHIN_GAME_ATTACK, GENSHIN_GAME_CLAIM, GENSHIN_GAME_EXPLORE, GENSHIN_GAME_HEAL, GENSHIN_GAME_MUG, GENSHIN_GAME_PRIMOLVLUP, GENSHIN_GAME_PROFILE, GENSHIN_GAME_START, GENSHIN_GAME_SWITCH, GENSHIN_GAME_WEATHER, GENSHIN_GAME_WISH, GENSHIN_REMINDME, GENSHIN_RESIN_CHECK, GENSHIN_RESIN_SET, GENSHIN_RESIN_TIME, REMINDERS_HELP, RESIN_STATUS
+from bot.utils.help import GENSHIN_CANCEL_REMINDERS, GENSHIN_CHECKREMINDERS, GENSHIN_DATABASE_MD, GENSHIN_DB_ARTIFACT, GENSHIN_DB_CHAR, GENSHIN_DB_CHAR_ASC, GENSHIN_DB_DOMAIN, GENSHIN_DB_ENEMY, GENSHIN_DB_FOOD, GENSHIN_DB_MATERIAL, GENSHIN_DB_TAL, GENSHIN_DB_TAL_MAT, GENSHIN_DB_WEAPON, GENSHIN_DB_WEAPON_MAT, GENSHIN_DISCORD_MINIGAME, GENSHIN_GAME_ATTACK, GENSHIN_GAME_ATTACKABYSS, GENSHIN_GAME_CHECKABYSS, GENSHIN_GAME_CLAIM, GENSHIN_GAME_EXPLORE, GENSHIN_GAME_HEAL, GENSHIN_GAME_LEADERBOARDS, GENSHIN_GAME_MUG, GENSHIN_GAME_PRIMOLVLUP, GENSHIN_GAME_PROFILE, GENSHIN_GAME_START, GENSHIN_GAME_SWITCH, GENSHIN_GAME_WEATHER, GENSHIN_GAME_WISH, GENSHIN_REMINDME, GENSHIN_RESIN_CHECK, GENSHIN_RESIN_SET, GENSHIN_RESIN_TIME, REMINDERS_HELP, RESIN_STATUS
 import discord
 
 class Core(commands.Cog):
@@ -15,6 +15,7 @@ class Core(commands.Cog):
         await self.bot.change_presence(activity=discord.Game(name="Type m!help"))
 
     @commands.command()
+    @commands.guild_only()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def help(self, ctx, *arg):
         category = ' '.join(arg)
@@ -58,9 +59,11 @@ class Core(commands.Cog):
             embeds = []
             embeds.append(discord.Embed(title="Geshin Minigame - Commands", description=GENSHIN_DISCORD_MINIGAME, color=discord.Colour.green()))
             embeds.append(self._help_dict['startadventure'])
+            embeds.append(self._help_dict['leaderboard'])
             embeds.append(self._help_dict['claimdaily'])
             embeds.append(self._help_dict['profile'])
             embeds.append(self._help_dict['checkweather'])
+            embeds.append(self._help_dict['checkabyss'])
             embeds.append(self._help_dict['primolvlup'])
             embeds.append(self._help_dict['switchactive'])
             embeds.append(self._help_dict['wish'])
@@ -68,6 +71,7 @@ class Core(commands.Cog):
             embeds.append(self._help_dict['attack'])
             embeds.append(self._help_dict['heal'])
             embeds.append(self._help_dict['mug'])
+            embeds.append(self._help_dict['attackabyss'])
             await paginate_embed(self.bot, ctx, embeds)
             return
         else:
@@ -92,7 +96,7 @@ class Core(commands.Cog):
             'enemy': discord.Embed(title="Genshin Database - Enemy/Boss", description=GENSHIN_DB_ENEMY, color=discord.Colour.dark_red()),
             'remindme': discord.Embed(title="Reminders - Remindme", description=GENSHIN_REMINDME, color=discord.Colour.gold()),
             'checkreminders': discord.Embed(title="Reminders - Check", description=GENSHIN_CHECKREMINDERS, color=discord.Colour.gold()),
-            'cancelreminder': discord.Embed(title="Reminders - Cancel", description=GENSHIN_CANCELKREMINDERS, color=discord.Colour.gold()),
+            'cancelreminder': discord.Embed(title="Reminders - Cancel", description=GENSHIN_CANCEL_REMINDERS, color=discord.Colour.gold()),
             'startadventure': discord.Embed(title="Geshin Minigame - Start Adventure", description=GENSHIN_GAME_START, color=discord.Colour.green()),
             'claimdaily': discord.Embed(title="Geshin Minigame - Claim Daily", description=GENSHIN_GAME_CLAIM, color=discord.Colour.green()),
             'profile': discord.Embed(title="Geshin Minigame - Profile", description=GENSHIN_GAME_PROFILE, color=discord.Colour.green()),
@@ -106,5 +110,8 @@ class Core(commands.Cog):
             'mug': discord.Embed(title="Geshin Minigame - Mug", description=GENSHIN_GAME_MUG, color=discord.Colour.green()),
             'setresin': discord.Embed(title="Resin Status - Set", description=GENSHIN_RESIN_SET, color=discord.Colour.blue()),
             'checkresin': discord.Embed(title="Resin Status - Check", description=GENSHIN_RESIN_CHECK, color=discord.Colour.blue()),
-            'timetoresin': discord.Embed(title="Resin Status - Time To Resin", description=GENSHIN_RESIN_TIME, color=discord.Colour.blue())
+            'timetoresin': discord.Embed(title="Resin Status - Time To Resin", description=GENSHIN_RESIN_TIME, color=discord.Colour.blue()),
+            'checkabyss': discord.Embed(title="Geshin Minigame - Check Abyss", description=GENSHIN_GAME_CHECKABYSS, color=discord.Colour.blue()),
+            'attackabyss': discord.Embed(title="Geshin Minigame - Attack Abyss", description=GENSHIN_GAME_ATTACKABYSS, color=discord.Colour.blue()),
+            'leaderboard': discord.Embed(title="Geshin Minigame - Leaderboard", description=GENSHIN_GAME_LEADERBOARDS, color=discord.Colour.blue())
         }
