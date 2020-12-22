@@ -1,6 +1,5 @@
 from bot.utils.error import NoResultError
 from discord.ext.commands.cooldowns import BucketType
-import sqlalchemy
 from data.genshin.models import Artifact, DomainLevel
 from discord.ext import commands
 from sqlalchemy.sql import select
