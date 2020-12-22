@@ -53,6 +53,7 @@ class Flair(commands.Cog):
         self.emojis['Xingqiu'] = self.bot.get_emoji(787664923818852352)
         self.emojis['Xiangling'] = self.bot.get_emoji(787664876675268618)
         self.emojis['Venti'] = self.bot.get_emoji(787664848380493834)
+        self.emojis['Xinyan'] = self.bot.get_emoji(790901142908698624)
         self.emojis['FS'] = self.bot.get_emoji(789122991036432415)
         self.emojis['AR'] = self.bot.get_emoji(789122934248701992)
         self.emojis['Reminder'] = self.bot.get_emoji(789438946366324737)

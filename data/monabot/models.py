@@ -1,7 +1,6 @@
-from enum import unique
+from data import Base
 from sqlalchemy.sql.sqltypes import BigInteger, Boolean, DateTime
-from data.db import Base
-from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy import Column, Integer, String
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.orm import relationship
 

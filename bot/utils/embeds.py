@@ -1,4 +1,5 @@
 import asyncio
+import discord
 
 async def paginate_embed(bot, ctx, pages):
     total_pages = len(pages)
@@ -82,3 +83,14 @@ async def send_temp_embed(bot, ctx, embed, discord_file=None):
         except asyncio.TimeoutError:
             await message.delete()
             break
+
+async def send_game_embed_misc(ctx, title, description):
+    embed = discord.Embed(title=title, description=description, colour=discord.Colour.purple())
+    embed.set_footer(text=f'@{ctx.author.name}')
+    await ctx.send(embed=embed)
+
+async def send_action_embed(ctx, title, description, footer, color):
+    embed = discord.Embed(title=title, description=description, colour=color)
+    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+    embed.set_footer(text=footer)
+    await ctx.send(embed=embed)

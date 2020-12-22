@@ -17,6 +17,7 @@ from bot.cogs.database.enemy import Enemies as EnemyCog
 from bot.cogs.database.weapon import Weapons as WeaponCog
 from bot.cogs.database.artifact import Artifacts as ArtifactCog
 from bot.cogs.database.domain import Domains as DomainCog
+from bot.cogs.database.core_db import Query as QueryCog
 
 import os
 
@@ -24,12 +25,9 @@ from dotenv import load_dotenv
 from discord.ext import commands
 import discord
 
-from data.db import *
-from data.genshin.models import *
-from data.monabot.models import *
-
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
+DB_URI = os.getenv('ASYNC_DB_URI')
 
 # Set Logging
 import logging
@@ -53,6 +51,7 @@ bot = commands.Bot(command_prefix='m!', intents=intents, help_command=None)
 # Add cog modules
 bot.add_cog(CoreCog(bot))
 bot.add_cog(GreetingsCog(bot))
+bot.add_cog(QueryCog(bot, DB_URI))
 bot.add_cog(RemindersCog(bot))
 bot.add_cog(ResinCog(bot))
 bot.add_cog(AdminCog(bot))

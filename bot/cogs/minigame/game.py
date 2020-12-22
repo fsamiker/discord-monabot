@@ -1,7 +1,10 @@
+from bot.utils.queries.genshin_database_queries import query_random_character, query_random_food
+from bot.cogs.database.character import query_character
+from bot.utils.embeds import send_action_embed, send_game_embed_misc
+from bot.utils.queries.minigame_queries import query_gameprofile, query_random_user_character, query_user_active_character, query_user_bench_characters, query_user_character
 from discord.ext.commands.cooldowns import BucketType
 from data.genshin.models import Character, Food
 from data.monabot.models import GameCharacter, GameProfile
-from data.db import session_scope
 from bot.utils.users import mention_by_id
 from discord.ext import commands
 from datetime import datetime, timedelta
@@ -9,8 +12,9 @@ from  sqlalchemy.sql.expression import func
 import discord
 import random
 import asyncio
+from sqlalchemy.ext.asyncio import AsyncSession
 
-class Game(commands.Cog, name='DiscordFun'):
+class Game(commands.Cog):
 
     EXP_MULTIPLIER = 100
     HP_MULTIPLIER = 750
@@ -26,8 +30,8 @@ class Game(commands.Cog, name='DiscordFun'):
     PRIMO_CLAIM_RATE = 24  # Hours
     PRIMO_CLAIM_VALUE = 300
     PRIMO_BONUS_CHANCE = 10
-    PRIMO_BONUS_MULTIPLIER = 10
-    STEAL_CHANCE = 20
+    PRIMO_BONUS_MULTIPLIER = 5
+    STEAL_CHANCE = 25
     STEAL_CAUGHT_CHANCE = 5
     MAX_HEAL_CHANCE = 20
     HEAL_MULTIPLIER = 150
@@ -71,19 +75,22 @@ class Game(commands.Cog, name='DiscordFun'):
     @commands.cooldown(5,1,BucketType.guild) 
     async def startadventure(self, ctx, character:str=''):
         """Start your discord genshin minigame adventure!"""
-        with session_scope() as s:
-            user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
+
+        title = 'Start Adventure'
+
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            user = await s.run_sync(query_gameprofile, discord_id=ctx.author.id)
             if user:
-                await ctx.send(f"You've already started your adventure\nType m!help DiscordFun for game commands")
+                await send_game_embed_misc(ctx, title, f"You've already started your adventure\nType `m!help genshin minigame` for game commands")
                 return
             else:
                 if not character:
-                    await ctx.send(f"{mention_by_id(ctx.author.id)} you are about to embark on your discord adventure!\nChoose a starting character from tevyat\nType m!startadventure <character name>")
+                    await send_game_embed_misc(ctx, title, f"{mention_by_id(ctx.author.id)} you are about to embark on your discord adventure!\nChoose a starting character from tevyat\nType `m!startadventure <character name>`")
                     return
                 name = character.capitalize()
-                char = s.query(Character).filter_by(name=name).first()
+                char = await s.run_sync(query_character, name=name)
                 if not char:
-                    await ctx.send(f'"{name}" is not a know Tevyat character\nTry again with m!startadventure')
+                    await send_game_embed_misc(ctx, title, f'"{name}" is not a known Tevyat character\nTry again with `m!startadventure`')
                     return
                 user = GameProfile(
                     discord_id=ctx.author.id,
@@ -106,7 +113,8 @@ class Game(commands.Cog, name='DiscordFun'):
                 )
                 gamechar.character=char
                 user.characters.append(gamechar)
-                s.add(user)
+            s.add(user)
+            await s.commit()
         
         await self.send_user_profile(ctx)
 
@@ -121,8 +129,8 @@ class Game(commands.Cog, name='DiscordFun'):
         if check:
             return
 
-        with session_scope() as s:
-            user = s.query(GameProfile).filter_by(discord_id=member.id).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            user = await s.run_sync(query_gameprofile, discord_id=ctx.author.id)
             if not user:
                 await self.no_profile(ctx, member)
                 return
@@ -141,6 +149,7 @@ class Game(commands.Cog, name='DiscordFun'):
 
         embed.description = desc
         embed.color = flair.get_element_color(self._todays_weather)
+        embed.set_footer(text=f'@{ctx.author.name}')
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -150,12 +159,15 @@ class Game(commands.Cog, name='DiscordFun'):
         """Make a wish!"""
 
         if n < 1:
-            await ctx.send('Invalid wish')
+            raise commands.UserInputError
+        if n > 10:
+            await send_game_embed_misc(ctx, 'Too Many Wishes', 'Maximum 10 wishes at a time')
+            return
         cost = n*160
         msg=''
 
-        with session_scope() as s:
-            user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            user = await s.run_sync(query_gameprofile, discord_id=ctx.author.id)
             if not user:
                 await self.no_profile(ctx)
                 return
@@ -178,8 +190,8 @@ class Game(commands.Cog, name='DiscordFun'):
                 msg += '\nCharacters Wished:'
                 lvl_ups = {}
                 for i in range(char_n):
-                    new_char = s.query(Character).order_by(func.random()).limit(1).first()
-                    game_char = s.query(GameCharacter).filter_by(profile_id=user.id, character_id=new_char.id).first()
+                    new_char = await s.run_sync(query_random_character)
+                    game_char = await s.run_sync(query_user_character, profile_id=user.id, character_id=new_char.id)
                     if game_char:
                         game_char.constellation += 1
                         if game_char.character.name in lvl_ups.keys():
@@ -201,7 +213,7 @@ class Game(commands.Cog, name='DiscordFun'):
                 msg += '\n\nFoods Wished:'
                 food_drops = {}
                 for i in range(food_n):
-                    f = s.query(Food).order_by(func.random()).limit(1).first()
+                    f = await s.run_sync(query_random_food)
                     if f.name in food_drops.keys():
                         food_drops[f.name] += 1
                     else:
@@ -213,10 +225,11 @@ class Game(commands.Cog, name='DiscordFun'):
             user.primogems -= cost
 
             msg+= f'\n\n{flair.get_emoji("Primogem")} Remaining: {user.primogems}'
+            await s.commit()
     
         embed = discord.Embed(title=f"{ctx.author.display_name} wished... ",
         description = msg.strip(),
-        color = discord.Colour.purple())
+        color = discord.Colour.gold())
         embed.set_thumbnail(url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
 
@@ -226,86 +239,80 @@ class Game(commands.Cog, name='DiscordFun'):
     async def attack(self, ctx, target: discord.Member):
         """Attack a player! Stamina Cost: 15"""
         cost = 15
-        if ctx.guild:
-            server_region = ctx.guild.region.name
-        else:
-            server_region = 'GMT'
+        title=f'Attacked...'
+        color=discord.Colour.dark_red()
 
         check = await self.check_member_is_mona(ctx, target)
         if check:
             return
         
-        with session_scope() as s:
-            user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
-            target_user = s.query(GameProfile).filter_by(discord_id=target.id).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            user = await s.run_sync(query_gameprofile, discord_id=ctx.author.id)
+            target_user = await s.run_sync(query_gameprofile, discord_id=target.id)
             if not user:
                 await self.no_profile(ctx)
                 return
             if not target_user:
-                await ctx.send(f'{target.display_name.title()} does not seem to have started their adventure')
+                await self.no_profile(ctx, target)
                 return
             user = self.check_user_status(user)
             target_user = self.check_user_status(target_user)
             if user.deathtime:
-                await ctx.send(f'You are currently respawning!')
+                await send_game_embed_misc(ctx, 'Invalid Action', f'You are currently respawning!')
                 return
             if target_user.deathtime:
-                await ctx.send(f'{target.display_name} is currently still respawning!')
+                await send_game_embed_misc(ctx, 'Invalid Action', f'{target.display_name} is currently still respawning!')
                 return
             if user.stamina < cost:
-                await ctx.send(f'Sorry you do not have enough stamina. Go take a nap and come back later')
-                return
-            if target == ctx.author:
-                user.stamina -= cost
-                await ctx.send(f'{target.display_name.title()} seems to be confused. Attempted to attack themself.')
+                await send_game_embed_misc(ctx, 'Invalid Action', f'Sorry you do not have enough stamina. Go take a nap and come back later')
                 return
             user.stamina -= cost
-            # Calculate Damage
-            crit = random.randint(0, 100)
-            dmg = int(random.randint(50*user.level,user.level*self.MAX_DMG_MULTIPLIER)*self.bonus_rate(user))
-            embed = discord.Embed(title=f'{ctx.author.display_name} attacked...', color=discord.Colour.dark_red())
-            embed.set_footer(text=f'Remaining Stamina: {user.stamina}/{user.max_stamina}')
-            msg = ''
-            # Unfortunate chance
-            if crit <=self.TRIP_CHANCE:
-                # Rex Lapis chance
-                if (user.level-target_user.level) > 3:
-                    user.health = 0
-                    msg += 'Morax did not take kindly to you picking on the weak. You have been struck by earth from above!'
-                # Trip chance
+            footer = f'Remaining Stamina: {user.stamina}/{user.max_stamina}'
+            if target == ctx.author:
+                await send_action_embed(ctx, title, f'{target.display_name.title()} seems to be confused. Attempted to attack themself.', footer, color)
+            else:
+                # Calculate Damage
+                crit = random.randint(0, 100)
+                dmg = int(random.randint(50*user.level,user.level*self.MAX_DMG_MULTIPLIER)*self.bonus_rate(user))
+                msg = ''
+                # Unfortunate chance
+                if crit <=self.TRIP_CHANCE:
+                    # Rex Lapis chance
+                    if (user.level-target_user.level) > 3:
+                        user.health = 0
+                        msg += 'Morax did not take kindly to you picking on the weak. You have been struck by earth from above!'
+                    # Trip chance
+                    else:
+                        self_dmg = random.randint(user.level*50, user.level*self.TRIP_DAMAGE)
+                        user.health -= self_dmg
+                        msg += f'Oops! {ctx.author.display_name} tripped on a Cor Lapis and took {self_dmg} damage'
+                    user = self.check_death(user)
+                    if not user.health:
+                        respawn_time = self.get_respawn_time(ctx, user)
+                        msg += f'\n{user.display_name} died. Respawning at {respawn_time}'
+                    msg += f'\n{target.display_name} laughed and got away unscathed'
+                    await send_action_embed(ctx, title, msg.strip(), footer, color)
                 else:
-                    self_dmg = random.randint(user.level*50, user.level*self.TRIP_DAMAGE)
-                    user.health -= self_dmg
-                    msg += f'Oops! {ctx.author.display_name} tripped on a Cor Lapis and took {self_dmg} damage'
-                user = self.check_death(user)
-                if not user.health:
-                    respawn_time = self.get_respawn_time(ctx, user)
-                    msg += f'\n{user.display_name} died. Respawning at {respawn_time}'
-                msg += f'\n{target.display_name} laughed and got away unscathed'
-                embed.description = msg.strip()
-                await ctx.send(embed=embed)
-                return
-            
-            msg = ''
-            if crit <= self.CRIT_CHANCE:
-                dmg = dmg*2
-                msg += '\nA Critical Hit!'
-            if (target_user.level-user.level) > 3:
-                dmg = dmg*(target_user.level-user.level+1)
-                msg += '\nYou seem to have found his weak point! Insane Damage!'
-            target_user.health -= dmg
-            msg += f'\n{ctx.author.display_name} dealt {dmg} damage to {target.display_name}!'
-            target_user = self.check_death(target_user)
-            if not target_user.health:
-                exp_gain = 50*target_user.level
-                user.exp += exp_gain
-                respawn_time = self.get_respawn_time(ctx, target_user)
-                msg += f'\n{ctx.author.display_name} defeated {target.display_name} and gained {exp_gain} exp!\n{target.display_name} will respawn at {respawn_time}'
-                if user.exp >= user.max_exp:
-                    msg += f'\n{ctx.author.display_name} Leveled up!'
-            user = self.check_user_status(user)
-            embed.description = msg.strip()
-            await ctx.send(embed=embed)
+                    msg = ''
+                    if crit <= self.CRIT_CHANCE:
+                        dmg = dmg*2
+                        msg += '\nA Critical Hit!'
+                    if (target_user.level-user.level) > 3:
+                        dmg = dmg*(target_user.level-user.level+1)
+                        msg += '\nYou seem to have found his weak point! Insane Damage!'
+                    target_user.health -= dmg
+                    msg += f'\n{ctx.author.display_name} dealt {dmg} damage to {target.display_name}!'
+                    target_user = self.check_death(target_user)
+                    if not target_user.health:
+                        exp_gain = 50*target_user.level
+                        user.exp += exp_gain
+                        respawn_time = self.get_respawn_time(ctx, target_user)
+                        msg += f'\n{ctx.author.display_name} defeated {target.display_name} and gained {exp_gain} exp!\n{target.display_name} will respawn at {respawn_time}'
+                        if user.exp >= user.max_exp:
+                            msg += f'\n{ctx.author.display_name} Leveled up!'
+                    user = self.check_user_status(user)
+                    await send_action_embed(ctx, title, msg.strip(), footer, color)
+            await s.commit()
 
     @commands.command()
     @commands.cooldown(1,1,BucketType.user)
@@ -313,8 +320,8 @@ class Game(commands.Cog, name='DiscordFun'):
         """Claim daily primogems"""
         now = datetime.utcnow()
 
-        with session_scope() as s:
-            user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            user = await s.run_sync(query_gameprofile, discord_id=ctx.author.id)
             if not user:
                 await self.no_profile(ctx)
                 return
@@ -327,11 +334,11 @@ class Game(commands.Cog, name='DiscordFun'):
                     msg += "It's your lucky day! You found a precious chest!"
                 user.primogems += primo
                 user.last_claim = now
-                msg += f'\nYou have claimed {primo} primogems!'
-                await ctx.send(msg.strip())
+                msg += f'\nYou have claimed {self.bot.get_cog("Flair").get_emoji("Primogem")} {primo} primogems!'
+                await send_game_embed_misc(ctx, 'Daily Claim', msg.strip())
             else:
-                await ctx.send(f"Don't be greedy! Only one claim every {self.PRIMO_CLAIM_RATE} hours")
-                return
+                await send_game_embed_misc(ctx, 'Daily Claim', f"Don't be greedy! Only one claim every {self.PRIMO_CLAIM_RATE} hours")
+            await s.commit()
 
     @commands.command()
     @commands.cooldown(1,1,BucketType.user)
@@ -341,60 +348,58 @@ class Game(commands.Cog, name='DiscordFun'):
         cost = 15
         flair = self.bot.get_cog("Flair")
 
+        title=f'Attempted to steal...'
+        color=discord.Colour.darker_gray()
+
         check = await self.check_member_is_mona(ctx, target)
         if check:
             return
 
-        with session_scope() as s:
-            user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
-            target_user = s.query(GameProfile).filter_by(discord_id=target.id).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            user = await s.run_sync(query_gameprofile, discord_id=ctx.author.id)
+            target_user = await s.run_sync(query_gameprofile, discord_id=target.id)
             if not user:
                 await self.no_profile(ctx)
                 return
             if not target_user:
-                await ctx.send(f'{target.display_name.title()} does not seem to have started their adventure')
+                await self.no_profile(ctx, target)
                 return
             user = self.check_user_status(user)
             if user.deathtime:
-                await ctx.send(f'You are currently respawning!')
+                await send_game_embed_misc(ctx, 'Invalid Action', f'You are currently respawning!')
                 return
             if user.stamina < cost:
-                await ctx.send(f'Sorry you do not have enough stamina. Go take a nap and come back later')
-                return
-            embed = discord.Embed(title=f'{ctx.author.display_name} attempted to steal...', color=discord.Colour.dark_gray())
-            if target == ctx.author:
-                user.stamina -= cost
-                embed.set_footer(text=f'Remaining Stamina: {user.stamina}/{user.max_stamina}')
-                embed.description = f'{target.display_name.title()} seems to be confused. Attempted to steal from themself.'
-                await ctx.send(embed=embed)
+                await send_game_embed_misc(ctx, 'Invalid Action', f'Sorry you do not have enough stamina. Go take a nap and come back later')
                 return
             user.stamina -= cost
-            embed.set_footer(text=f'Remaining Stamina: {user.stamina}/{user.max_stamina}')
-            # Calculate steal chance
-            chance = random.randint(0, 100)
-            if chance <= self.STEAL_CAUGHT_CHANCE:
-                embed.description = f'{ctx.author.display_name} was caught stealing by Morax.\
-                \nAs punishment for breaking moral contract, {ctx.author.display_name} gave {target.display_name} all his primogems.\
-                \n{target.display_name} recieved {flair.get_emoji("Primogem")} {user.primogems}'
-                await ctx.send(embed=embed)
-                target_user.primogems = user.primogems
-                user.primogems = 0
-                return
-            if chance <= self.STEAL_CHANCE*self.bonus_rate(user):
-                steal_amount = random.randint(500, 1000)
-                if target_user.primogems > steal_amount:
-                    target_user.primogems -= steal_amount
-                    user.primogems += steal_amount
-                    stole = f'{flair.get_emoji("Primogem")} {steal_amount}'
+            footer = f'Remaining Stamina: {user.stamina}/{user.max_stamina}'
+            if target == ctx.author:
+                await send_action_embed(ctx, title, f'{target.display_name.title()} seems to be confused. Attempted to steal from themself.', footer, color)
+            else:
+                # Calculate steal chance
+                chance = random.randint(0, 100)
+                if chance <= self.STEAL_CAUGHT_CHANCE:
+                    msg = f'{ctx.author.display_name} was caught stealing by Morax.\
+                    \nAs punishment for breaking moral contract, {ctx.author.display_name} gave {target.display_name} all his primogems.\
+                    \n{target.display_name} recieved {flair.get_emoji("Primogem")} {user.primogems}'
+                    await send_action_embed(ctx, title, msg, footer, color)
+                    target_user.primogems = user.primogems
+                    user.primogems = 0
+                elif chance <= self.STEAL_CHANCE*self.bonus_rate(user):
+                    steal_amount = random.randint(500, 1000)
+                    if target_user.primogems > steal_amount:
+                        target_user.primogems -= steal_amount
+                        user.primogems += steal_amount
+                        stole = f'{flair.get_emoji("Primogem")} {steal_amount}'
+                    else:
+                        stole = f'{flair.get_emoji("Primogem")} {target_user.primogems}'
+                        user.primogems += target_user.primogems
+                        target_user.primogems = 0
+                    msg = f'{ctx.author.display_name} stole {stole} from {target.display_name}!'
+                    await send_action_embed(ctx, title, msg, footer, color)
                 else:
-                    stole = f'{flair.get_emoji("Primogem")} {target_user.primogems}'
-                    user.primogems += target_user.primogems
-                    target_user.primogems = 0
-                embed.description = f'{ctx.author.display_name} stole {stole} from {target.display_name}!'
-                await ctx.send(embed=embed)
-                return
-        
-        await ctx.send(f'{ctx.author.display_name} failed to steal from {target.display_name}')
+                    await send_action_embed(ctx, title, f'{ctx.author.display_name} failed to steal from {target.display_name}', footer, color)
+            await s.commit()
                 
     @commands.command()
     @commands.cooldown(1,1,BucketType.user)
@@ -402,62 +407,64 @@ class Game(commands.Cog, name='DiscordFun'):
         """Spend 3000 primogems for an instant lvlup"""
         cost = 3000
         flair = self.bot.get_cog("Flair")
-        with session_scope() as s:
-            user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            user = await s.run_sync(query_gameprofile, discord_id=ctx.author.id)
             if not user:
                 await self.no_profile(ctx)
                 return
             user = self.check_user_status(user)
             if user.deathtime:
-                await ctx.send(f'You are currently respawning!')
+                await send_game_embed_misc(ctx, 'Invalid Action', f'You are currently respawning!')
                 return
             if user.primogems < cost:
-                await ctx.send(f'You do not have enough primogems. {flair.get_emoji("Primogem")} {cost} needed for instant lvlup')
+                await send_game_embed_misc(ctx, 'Invalid Action', f'You do not have enough primogems.\n{flair.get_emoji("Primogem")} {cost} needed for instant lvlup')
                 return
             user.primogems -= cost
             user.exp = user.max_exp
             user = self.check_user_status(user)
-            await ctx.send(f'{ctx.author.display_name} spent {flair.get_emoji("Primogem")} {cost} and leveled up!')
-            return
+            await send_game_embed_misc(ctx, 'Primolvlup!', f'{ctx.author.display_name} spent {flair.get_emoji("Primogem")} {cost} and leveled up!')
+            await s.commit()
 
     @commands.command()
     @commands.guild_only()
     @commands.cooldown(1,1,BucketType.user)
     async def heal(self, ctx):
         """Heal yourself. Stamina Cost: 10"""
-        await ctx.send('This command is currently unavailable due to bug fixes')
-        return
         cost = 10
-        with session_scope() as s:
-            user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
+        title=f'Healed...'
+        color=discord.Colour.dark_green()
+
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            user = await s.run_sync(query_gameprofile, discord_id=ctx.author.id)
             if not user:
                 await self.no_profile(ctx)
                 return
             user = self.check_user_status(user)
             if user.deathtime:
-                await ctx.send(f'You are currently respawning!')
+                await send_game_embed_misc(ctx, 'Invalid Action', f'You are currently respawning!')
                 return
             if user.stamina < cost:
-                await ctx.send(f'Sorry you do not have enough stamina. Go take a nap and come back later')
+                await send_game_embed_misc(ctx, 'Invalid Action', f'Sorry you do not have enough stamina. Go take a nap and come back later')
                 return
             if user.health == user.max_health:
-                await ctx.send('Your health is already full!')
+                footer = f'Remaining Stamina: {user.stamina}/{user.max_stamina}'
+                await send_action_embed(ctx, title, 'Your health is already full!', footer, color)
                 return
             user.stamina -= cost
-            embed = discord.Embed(title=f'{ctx.author.display_name} healed...', color=discord.Colour.dark_green())
-            embed.set_footer(text=f'Remaining Stamina: {user.stamina}/{user.max_stamina}')
+            footer = f'Remaining Stamina: {user.stamina}/{user.max_stamina}'
             chance = random.randint(1, 100)
             if chance <= self.MAX_HEAL_CHANCE*self.bonus_rate(user):
                 user.health = user.max_health
-                embed.description = f'{ctx.author.display_name} was blessed by Barbatos! Healed to full!'
-                await ctx.send(embed=embed)
-                return
-            heal = random.randint(10, user.level*self.HEAL_MULTIPLIER)
-            user.health += heal
-            if user.health > user.max_health:
-                user.health=user.max_health
-            embed.description = f'Healed for {heal}!\nHealth: {user.health}/{user.max_health}'
-            await ctx.send(embed=embed)
+                msg = f'{ctx.author.display_name} was blessed by Barbatos! Healed to full!'
+                await send_action_embed(ctx, title, msg.strip(), footer, color)
+            else:
+                heal = random.randint(10, user.level*self.HEAL_MULTIPLIER)
+                user.health += heal
+                if user.health > user.max_health:
+                    user.health=user.max_health
+                msg = f'Healed for {heal}!\nHealth: {user.health}/{user.max_health}'
+                await send_action_embed(ctx, title, msg.strip(), footer, color)
+            await s.commit()
 
     @commands.command()
     @commands.cooldown(1,1,BucketType.user)
@@ -465,135 +472,134 @@ class Game(commands.Cog, name='DiscordFun'):
         """Switch active character"""
         flair = self.bot.get_cog("Flair")
         name = name.title()
-        with session_scope() as s:
-            user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
+        title = 'Switch Character'
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            user = await s.run_sync(query_gameprofile, discord_id=ctx.author.id)
             if not user:
                 await self.no_profile(ctx)
                 return
-            current_active = s.query(GameCharacter).filter_by(active=True, profile_id=user.id).first()
+            current_active = await s.run_sync(query_user_active_character, profile_id=user.id)
             if current_active.character.name == name:
-                await ctx.send(f'{flair.get_emoji(name)} {name} is already your active character!')
+                await send_game_embed_misc(ctx, title, f'{flair.get_emoji(name)} {name} is already your active character!')
                 return
-            char = s.query(Character).filter_by(name=name).first()
+            char = await s.run_sync(query_character, name=name)
             if not char:
-                await ctx.send(f'{name} is not a known character in Tevyat')
+                await send_game_embed_misc(ctx, title, f'{name} is not in your party')
                 return
-            new_active = s.query(GameCharacter).filter_by(character_id=char.id, profile_id=user.id).first()
+            new_active = await s.run_sync(query_user_character, profile_id=user.id, character_id=char.id)
             if not new_active:
-                await ctx.send(f'{name} is not in your party')
+                await send_game_embed_misc(ctx, title, f'{name} is not in your party')
                 return
             new_active.active = True
             current_active.active = False
-            await ctx.send(f'{flair.get_emoji(name)} {name} is now your active character!')
+            await send_game_embed_misc(ctx, title, f'{flair.get_emoji(name)} {name} is now your active character!')
+            await s.commit()
 
     @commands.command()
     @commands.guild_only()
     @commands.cooldown(1,1,BucketType.user)
     async def explore(self, ctx, n:int=1):
         """You never know what you might find. Stamina Cost: 10"""
-        if ctx.guild:
-            server_region = ctx.guild.region.name
-        else:
-            server_region = 'GMT'
 
         if n < 1:
+            raise commands.UserInputError
+        if n > 10:
+            await send_game_embed_misc(ctx, 'Calm Down...', 'Maximum 10 explorations at a time')
             return
-
         cost = 10
-        with session_scope() as s:
-            user = s.query(GameProfile).filter_by(discord_id=ctx.author.id).first()
+        flair = self.bot.get_cog("Flair")
+        title = f'Exploration Logs'
+        color = discord.Colour.blue()
+
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            user = await s.run_sync(query_gameprofile, discord_id=ctx.author.id)
             if not user:
                 await self.no_profile(ctx)
                 return
             user = self.check_user_status(user)
             if user.deathtime:
-                await ctx.send(f'You are currently respawning!')
+                await send_game_embed_misc(ctx, 'Invalid Action', f'You are currently respawning!')
                 return
-            if user.stamina < cost:
-                await ctx.send(f'Sorry you do not have enough stamina. Go take a nap and come back later')
+            if user.stamina < cost*n:
+                await send_game_embed_misc(ctx, 'Invalid Action', f'Sorry you do not have enough stamina. Go take a nap and come back later')
                 return
             user.stamina -= cost
-            flair = self.bot.get_cog("Flair")
-            random_event = random.randint(1, 1000)
-            # Trigger random event
-            if random_event == 999:
-                random_char = s.query(GameCharacter).filter_by(profile_id=user.id).order_by(func.random()).first()
-                random_char.constellation += 1
-                await ctx.send(f'While exploring Stormterror {ctx.author.display_name} stumbled upon a strange meteor.\n{flair.get_emoji(random_char.character.name)} {random_char.character.name} touched the rock and was imbued with mysterious energy. {random_char.character.name} constellation up-ed!')
-                return
-            elif random_event >= 989:
-                user.stamina = 0
-                await ctx.send(f'{ctx.author.display_name} did not pay attention while collecting crabs at Yangguang Shoal.\n {ctx.author.display_name} was frozen by an Ice Slime and lost all stamina')
-                return
-            elif random_event >= 979:
-                user.primogems += 1000
-                await ctx.send(f'Wow, {ctx.author.display_name} found a precious chest! {flair.get_emoji("Primogem")} 1000')
-                return
-            elif random_event >= 969:
-                if user.primogems < 500:
-                    stolen = user.primogems
+            msgs = []
+
+            for i in range(n):
+                if user.deathtime or user.stamina < cost:
+                    break
+                random_event = random.randint(1, 1000)
+                # Trigger random event
+                if random_event == 999:
+                    random_char = await s.run_sync(query_random_user_character, profile_id=user.id)
+                    random_char.constellation += 1
+                    msgs.append(f'While exploring Stormterror {ctx.author.display_name} stumbled upon a strange meteor.\n{flair.get_emoji(random_char.character.name)} {random_char.character.name} touched the rock and was imbued with mysterious energy.\n{random_char.character.name} constellation up-ed!')
+                elif random_event >= 989:
+                    user.stamina = 0
+                    msgs.append(f'{ctx.author.display_name} did not pay attention while collecting crabs at Yangguang Shoal.\n {ctx.author.display_name} was frozen by an Ice Slime and lost all stamina')
+                elif random_event >= 979:
+                    user.primogems += 1000
+                    msgs.append(f'Wow, A precious chest!\n Gained {flair.get_emoji("Primogem")} 1000')
+                elif random_event >= 969:
+                    if user.primogems < 500:
+                        stolen = user.primogems
+                    else:
+                        stolen = 500
+                    user.primogems -= stolen
+                    msgs.append(f'{ctx.author.display_name} was investigation Dunyu Ruins when an invisible Fatui agent snuck up and snatched his purse!\nLost {flair.get_emoji("Primogem")} {stolen}!')
+                elif random_event >= 959:
+                    dmg = user.level*750
+                    user.health -= dmg
+                    user = self.check_death(user)
+                    msg = f'Stepped on a buried bomb. Kaboom!\n{ctx.author.display_name} took {dmg} damage'
+                    if user.deathtime:
+                        respawn_time = self.get_respawn_time(ctx, user)
+                        msg += f'\n{ctx.author.display_name} perished. Respawning at {respawn_time}'
+                    msgs.append(msg)
+                elif random_event >= 759:
+                    max_exp = 25*user.level
+                    random_exp = random.randint(1, max_exp)
+                    user.exp += random_exp
+                    user = self.check_user_status(user)
+                    msgs.append(f'Found some hilichurls and took them out.\nGained {flair.get_emoji("AR")} {random_exp} exp')
+                elif random_event >= 559:
+                    random_gems = random.randint(50, 100)
+                    user.primogems += random_gems
+                    msgs.append(f'Stumbled on a buried common chest.\n Gained {flair.get_emoji("Primogem")} {random_gems}')
+                elif random_event >= 549:
+                    user.health = user.max_health
+                    msgs.append(f'Passed a Statue of the Seven.\nFully healed!')
+                elif random_event >= 539:
+                    dmg = int(user.health/2)+1
+                    user.health -= dmg
+                    msgs.append(f'Slipped and fell while climbing Mount Hulao\n{ctx.author.display_name} took {dmg} damage!')
+                elif random_event >= 529:
+                    stamina_increase = user.level*5
+                    user.stamina += stamina_increase
+                    if user.stamina > user.max_stamina:
+                        user.stamina = user.max_stamina
+                    msgs.append(f'Found a relaxing spot and took a nap.\nRegained {stamina_increase} stamina')
                 else:
-                    stolen = 500
-                user.primogems -= stolen
-                await ctx.send(f'{ctx.author.display_name} was investigation Dunyu Ruins when an invisible Fatui agent snuck up and snatched his purse!\nLost {flair.get_emoji("Primogem")} {stolen}!')
-                return
-            elif random_event >= 959:
-                dmg = user.level*750
-                user.health -= dmg
-                user = self.check_death(user)
-                msg = f'{ctx.author.display_name} stepped on a buried bomb. Kaboom! {ctx.author.display_name} took {dmg} damage'
-                if user.deathtime:
-                    respawn_time = self.get_respawn_time(ctx, user)
-                    msg += f'\n{ctx.author.display_name} perished. Respawning at {respawn_time}'
-                await ctx.send(msg)
-                return
-            elif random_event >= 759:
-                random_exp = random.randint(1, 50)
-                user.exp += random_exp
-                user = self.check_user_status(user)
-                await ctx.send(f'{ctx.author.display_name} found some hilichurls and took them out. Gained {random_exp} exp')
-                return
-            elif random_event >= 559:
-                random_gems = random.randint(50, 100)
-                user.primogems += random_gems
-                await ctx.send(f'{ctx.author.display_name} stumbled on a buried common chest. {flair.get_emoji("Primogem")} {random_gems}')
-                return
-            elif random_event >= 549:
-                user.health = user.max_health
-                await ctx.send(f'{ctx.author.display_name} passed a Statue of the Seven. Fully healed!')
-                return
-            elif random_event >= 539:
-                dmg = int(user.health/2)+1
-                user.health -= dmg
-                await ctx.send(f'{ctx.author.display_name} slipped and fell while climbing Mount Hulao\n{ctx.author.display_name} took {dmg} damage!')
-                return
-            elif random_event >= 529:
-                stamina_increase = user.level*5
-                user.stamina += stamina_increase
-                if user.stamina > user.max_stamina:
-                    user.stamina = user.max_stamina
-                await ctx.send(f'{ctx.author.display_name} found a relaxing spot and took a nap. Regained {stamina_increase} stamina')
-                return
-            else:
-                await ctx.send(f'{ctx.author.display_name} did not find anything particularly interesting')
-                return
+                    msgs.append(f'Did not find anything particularly interesting')
+
+            footer = f'Remaining Stamina: {user.stamina}/{user.max_stamina}'
+            desc = '\u2022 '+'\n\n\u2022 '.join(msgs)
+            await send_action_embed(ctx, title, desc, footer, color)
+            await s.commit()
+
 
     async def no_profile(self, ctx, member=None):
         if member is None:
-            await ctx.send(f'You have not started your discord adventure\nRun m!startadventure to start your game')
+            await send_game_embed_misc(ctx, 'No Profile', f'You have not started your discord adventure\nRun `m!startadventure` to start your game')
         else:
-            await ctx.send(f'{member.display_name} has not started their discord adventure')
+            await send_game_embed_misc(ctx, 'No Profile', f'{member.display_name} has not started their discord adventure')
 
     async def send_user_profile(self, ctx, member=None):
-        if ctx.guild:
-            server_region = ctx.guild.region.name
-        else:
-            server_region = 'GMT'
-
-        with session_scope() as s:
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
             if not member:
                 member = ctx.author
-            user = s.query(GameProfile).filter_by(discord_id=member.id).first()
+            user = await s.run_sync(query_gameprofile, discord_id=member.id)
             if not user:
                 await self.no_profile(ctx, member)
                 return
@@ -606,8 +612,8 @@ class Game(commands.Cog, name='DiscordFun'):
             if user.deathtime:
                 respawn = self.get_respawn_time(ctx, user)
                 desc+= f"\nRespawn Time: {respawn}"
-            active_char = s.query(GameCharacter).filter_by(profile_id=user.id,active=True).first()
-            bench_char = s.query(GameCharacter).filter_by(profile_id=user.id,active=False).all()
+            active_char = await s.run_sync(query_user_active_character, profile_id=user.id)
+            bench_char = await s.run_sync(query_user_bench_characters, profile_id=user.id)
             embed = discord.Embed(title=f"{member.display_name.title()}'s profile",
             description=desc,
             color=flair.get_element_color(active_char.character.element)
@@ -629,9 +635,13 @@ class Game(commands.Cog, name='DiscordFun'):
                         bench3 += f'\n{flair.get_emoji(c.character.name)} {c.character.name} C{c.constellation}'
                     i = i%3+1
                 embed.add_field(name='Bench Characters', value=bench1.strip(), inline=True)
-                embed.add_field(name='\u200b', value=bench2.strip(), inline=True)
-                embed.add_field(name='\u200b', value=bench3.strip(), inline=True)
+                if bench2:
+                    embed.add_field(name='\u200b', value=bench2.strip(), inline=True)
+                if bench3:
+                    embed.add_field(name='\u200b', value=bench3.strip(), inline=True)
             embed.set_thumbnail(url=member.avatar_url)
+            await s.commit()
+
         await ctx.send(embed=embed)
 
     def convert_from_utc(self, time, server_region):

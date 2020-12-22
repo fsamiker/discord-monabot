@@ -1,11 +1,8 @@
+from data import Base
 from sqlalchemy.util.langhelpers import hybridproperty
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.sql.schema import ForeignKey, Table
 from sqlalchemy.orm import relationship
-from sqlalchemy.orm import registry
-
-mapper_reg = registry()
-Base = mapper_reg.generate_base()
 
 class TalentMaterial(Base):
     __tablename__ = 'talentmaterial'

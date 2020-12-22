@@ -1,10 +1,12 @@
+from bot.utils.queries.reminder_queries import query_reminder_by_typing
+from bot.utils.queries.resin_queries import query_resin
 from discord.ext.commands.cooldowns import BucketType
-from data.db import session_scope
 import discord
 from datetime import datetime, timedelta
 from discord.ext import commands
 from data.monabot.models import Reminder, Resin as resinmodel
 import math
+from sqlalchemy.ext.asyncio import AsyncSession
 
 class Resin(commands.Cog):
 
@@ -20,8 +22,7 @@ class Resin(commands.Cog):
 
         # Resin Target User
         if member is None:
-            member = ctx.message.author
-        member_id = member.id
+            member = ctx.author
         member_name = member.display_name
         if ctx.guild:
             server_region = ctx.guild.region.name
@@ -33,11 +34,11 @@ class Resin(commands.Cog):
         color=discord.Colour.dark_blue())
 
         # Get User Resin
-        with session_scope() as s:
-            resin = s.query(resinmodel).filter_by(discord_id=member_id).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            resin = await s.run_sync(query_resin, discord_id=member.id)
             if not resin:
                 embed.description = 'No Record'
-                embed.set_footer(text='Run m!setresin to record resin')
+                embed.set_footer(text='Run `m!setresin` to record resin')
             else:
                 max_resin_time = self.get_max_resin_time(resin.timestamp, resin.resin)
                 display_time = self.convert_from_utc(max_resin_time, server_region).strftime("%I:%M %p, %d %b %Y")
@@ -75,9 +76,9 @@ class Resin(commands.Cog):
         color=discord.Colour.dark_blue())
         desc = ''
 
-        with session_scope() as s:
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
             # check for existing resin
-            r = s.query(resinmodel).filter_by(discord_id=ctx.author.id).first()
+            r = await s.run_sync(query_resin, discord_id=ctx.author.id)
             now = datetime.utcnow()
             max_resin_time = self.get_max_resin_time(now, resin)
             display_time = self.convert_from_utc(max_resin_time, server_region).strftime("%I:%M %p, %d %b %Y")
@@ -88,11 +89,11 @@ class Resin(commands.Cog):
                 r.resin = resin
                 r.timestamp = now
                 # check for existing reminder
-                reminder = s.query(Reminder).filter_by(discord_id=ctx.author.id, typing='Max Resin').first()
+                reminder = await s.run_sync(query_reminder_by_typing, discord_id=ctx.author.id, typing='Max Resin')
                 if reminder:
                     reminder.when=max_resin_time
                     reminder.timezone=server_region
-                    reminder.channel=ctx.channel.id
+                    reminder.channel=str(ctx.channel.id)
                     desc += f"\n{flair.get_emoji('Reminder')} 'Max Resin' reminder adjusted to {display_time}"
             else:
                 # set new entry
@@ -104,10 +105,11 @@ class Resin(commands.Cog):
                 s.add(r)
                 desc += f'Set current resin value'
                 embed.add_field(name= f'{flair.get_emoji("Resin")} {resin}', value='\u200b')
+            await s.commit()
             
         embed.description = desc.strip()
 
-        self.bot.get_cog('Reminders')._get_next_reminder()
+        await self.bot.get_cog('Reminders')._get_next_reminder()
         
         await ctx.send(embed=embed)
 
@@ -125,8 +127,7 @@ class Resin(commands.Cog):
 
         # Resin Target User
         if member is None:
-            member = ctx.message.author
-        member_id = member.id
+            member = ctx.author
         member_name = member.display_name
         if ctx.guild:
             server_region = ctx.guild.region.name
@@ -138,8 +139,8 @@ class Resin(commands.Cog):
         color=discord.Colour.dark_blue())
 
         # Get User Resin
-        with session_scope() as s:
-            resin = s.query(resinmodel).filter_by(discord_id=member_id).first()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            resin = await s.run_sync(query_resin, discord_id=ctx.author.id)
             if not resin:
                 embed.description = 'No Record'
                 embed.set_footer(text='Run m!setresin to record resin')

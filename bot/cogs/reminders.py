@@ -1,9 +1,11 @@
+from bot.utils.queries.resin_queries import query_resin
+from bot.utils.queries.reminder_queries import query_all_reminders, query_next_reminder, query_reminder_by_id, query_reminder_by_typing
 import discord
 from discord.ext.commands.cooldowns import BucketType
 from data.monabot.models import Reminder, Resin
-from data.db import session_scope
 from datetime import datetime, timedelta
 from discord.ext import commands
+from sqlalchemy.ext.asyncio import AsyncSession
 import asyncio
 import json
 import pytz
@@ -24,31 +26,35 @@ class Reminders(commands.Cog):
 
     async def reminder_processor(self):
         print('Reminder server started!')
-        self._get_next_reminder()
+        await self._get_next_reminder()
         while self._enable_reminders:
             now = datetime.utcnow()
             if self._next_reminder is not None and self._next_reminder.get('when') < now:
                 user = self.bot.get_user(self._next_reminder.get('discord_id'))
-                try:
-                    await user.send(self._next_reminder.get('message'))
-                except Exception:
-                    print(f'Failed to send reminder to {user}')
-                self._delete_reminder(self._next_reminder.get('id'))
-                self._get_next_reminder()
+                if user is not None:
+                    try:
+                        await user.send(self._next_reminder.get('message'))
+                    except Exception:
+                        print(f'Failed to send reminder to {user}')
+                else:
+                    print(f'Failed to find user {self._next_reminder.get("discord_id")}')
+                await self._delete_reminder(self._next_reminder.get('id'))
+                await self._get_next_reminder()
             await asyncio.sleep(1)
 
-    def _get_next_reminder(self):
-        with session_scope() as s:
-            r = s.query(Reminder).order_by(Reminder.when.asc()).first()
+    async def _get_next_reminder(self):
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            r = await s.run_sync(query_next_reminder)
             if r:
                 self._next_reminder = r.to_dict()
             else:
                 self._next_reminder = None
     
-    def _delete_reminder(self, id):
-        with session_scope() as s:
-            r = s.query(Reminder).get(id)
+    async def _delete_reminder(self, id):
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            r = await s.run_sync(query_reminder_by_id, _id=id)
             s.delete(r)
+            await s.commit()
 
     def _load_timezones(self):
         with open('data/utility/discord_timezones.json', 'r') as f:
@@ -111,9 +117,9 @@ Example Usage:
                 await ctx.send(f'{error}')
                 return
 
-            with session_scope() as s:
+            async with AsyncSession(self.bot.get_cog('Query').engine) as s:
                 resin_value = int(args[1])
-                resin = s.query(Resin).filter_by(discord_id=ctx.author.id).first()
+                resin = await s.run_sync(query_resin, discord_id=ctx.author.id)
                 now = datetime.utcnow()
                 max_resin_time = resin_cog.get_max_resin_time(now, resin_value)
                 display_time = self.convert_from_utc(max_resin_time, server_region).strftime("%I:%M %p, %d %b %Y")
@@ -130,24 +136,25 @@ Example Usage:
                     )
                     s.add(resin)
                 # Check existing reminder
-                r = s.query(Reminder).filter_by(discord_id=ctx.author.id, typing='Max Resin').first()
+                r = await s.run_sync(query_reminder_by_typing, discord_id=ctx.author.id, typing='Max Resin')
                 if r:
                     r.when = max_resin_time
                     r.timezone = server_region
-                    r.channel = ctx.channel.id
+                    r.channel = str(ctx.channel.id)
                     message += f'Existing reminder found, updated to {display_time}'
                 # Create new reminder
                 else:
                     r = Reminder(
                         discord_id=ctx.author.id,
                         when=max_resin_time,
-                        channel=ctx.channel.id,
+                        channel=str(ctx.channel.id),
                         message=f'Your {flair.get_emoji("Resin")} resin is full!',
                         typing='Max Resin',
                         timezone=server_region
                     )
                     s.add(r)
                     message += f'{flair.get_emoji("Reminder")} Max Resin {flair.get_emoji("Resin")} set for {display_time}'
+                await s.commit()
 
         if option in ['specialty', 'mineral', 'artifact']:
             # validate specialty input
@@ -166,31 +173,31 @@ Example Usage:
                 days=1
                 typing = 'Artifact Run Respawn'
                 r_msg = f'Your Artifact Run has respawned!'
-            with session_scope() as s:
+            async with AsyncSession(self.bot.get_cog('Query').engine) as s:
                 now = datetime.utcnow()+timedelta(days=days)
                 display_time = self.convert_from_utc(now, server_region).strftime("%I:%M %p, %d %b %Y")
                 # Check existing reminder
-                r = s.query(Reminder).filter_by(discord_id=ctx.author.id, typing=typing).first()
+                r = await s.run_sync(query_reminder_by_typing, discord_id=ctx.author.id, typing=typing)
                 if r:
                     r.when = now
                     r.timezone = server_region
-                    r.channel = ctx.channel.id
+                    r.channel = str(ctx.channel.id)
                     message += f'Existing reminder found, updated to {display_time}'
                 # Create new reminder
                 else:
                     r = Reminder(
                         discord_id=ctx.author.id,
                         when=now,
-                        channel=ctx.channel.id,
+                        channel=str(ctx.channel.id),
                         message=r_msg,
                         typing=typing,
                         timezone=server_region
                     )
                     s.add(r)
                     message += f'{flair.get_emoji("Reminder")} {typing} set for {display_time}'
+                await s.commit()
 
-        self._get_next_reminder()
-
+        await self._get_next_reminder()
         await ctx.send(message)
 
     @commands.command()
@@ -205,8 +212,8 @@ Example Usage:
         else:
             server_region = 'GMT'
 
-        with session_scope() as s:
-            reminders = s.query(Reminder).filter_by(discord_id=ctx.author.id).all()
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            reminders = await s.run_sync(query_all_reminders, discord_id=ctx.author.id)
             if reminders:
                 embed.description = 'Below is a list of your active reminders'
                 embed.set_footer(text=f'*Times are in {server_region.capitalize()} timezone')
@@ -234,9 +241,13 @@ Example Usage:
             await ctx.send(f'{message}\n{examples}')
 
         if value.lower() == 'all':
-            with session_scope() as s:
-                s.query(Reminder).filter_by(discord_id=ctx.author.id).delete()
+            async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+                r = await s.run_sync(query_all_reminders, discord_id=ctx.author.id)
+                for _ in r:
+                    s.delete(_)
+                await s.commit()
             await ctx.send('All your reminders have been cancelled')
+            await self._get_next_reminder()
             return
 
         try:
@@ -245,15 +256,17 @@ Example Usage:
             await usage(f'ID should be a number. Check reminder id with m!checkreminders')
             return
         
-        with session_scope() as s:
-            r = s.query(Reminder).get(_id)
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            r = await s.run_sync(query_reminder_by_id, _id=_id)
             if r:
                 if r.discord_id != ctx.author.id:
                     await ctx.send('You can only cancel your own reminders!')
+                    return
                 else:
                     s.delete(r)
+                    await s.commit()
                     await ctx.send(f'{r.typing} reminder id:{r.id} has been cancelled')
             else:
                 await ctx.send(f'Could not find reminder id:{_id}')
 
-        self._get_next_reminder()
+        await self._get_next_reminder()
