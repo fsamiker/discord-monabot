@@ -18,6 +18,8 @@ from bot.cogs.database.weapon import Weapons as WeaponCog
 from bot.cogs.database.artifact import Artifacts as ArtifactCog
 from bot.cogs.database.domain import Domains as DomainCog
 from bot.cogs.database.core_db import Query as QueryCog
+from bot.cogs.minigame.abyss import Abyss as AbyssCog
+from bot.cogs.minigame.leaderboards import Leaderboards as LeaderCog
 
 import os
 
@@ -57,6 +59,8 @@ bot.add_cog(ResinCog(bot))
 bot.add_cog(AdminCog(bot))
 bot.add_cog(CharacterCog(bot))
 bot.add_cog(GameCog(bot))
+bot.add_cog(AbyssCog(bot))
+bot.add_cog(LeaderCog(bot))
 bot.add_cog(FlairCog(bot))
 bot.add_cog(MaterialCog(bot))
 bot.add_cog(TalentCog(bot))
