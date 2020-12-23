@@ -1,3 +1,20 @@
+GENSHIN_GENERAL_MD = '''
+There are currently **4 main categories** of commands.
+
+Scroll by using the reaction emojis ◀️ ▶️ or type one of the following to check out each category in detail:
+
+💽 Genshin Database:   `m!help genshin database`
+⏰ Reminders:          `m!help reminders` 
+🌙 Resin Status:       `m!help resin status` 
+🕹️ Genshin Minigame:   `m!help genshin minigame`
+
+**Misc:**
+```
+updates             Monabot update logs
+support             Support resource links
+```
+'''
+
 GENSHIN_DATABASE_MD = '''
 Access curated details on all things genshin from [Genshin Wiki](https://genshin-impact.fandom.com/wiki/Genshin_Impact_Wiki)
 
@@ -511,5 +528,28 @@ Example Usage:
 ```
 m!leaderboard
 m!leaderboard global
+```
+'''
+
+GENSHIN_UPDATE= '''
+Check latest update logs
+Mona will bring up the latest 3 updates
+
+> m!updates
+
+Example Usage:
+```
+m!updates
+```
+'''
+
+GENSHIN_SUPPORT= '''
+Monabot support resource links
+
+> m!support
+
+Example Usage:
+```
+m!support
 ```
 '''
