@@ -7,14 +7,15 @@ from discord.ext import commands
 import discord
 from sqlalchemy.sql import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 def query_materials(session, name):
-    stmt = select(Material).filter(func.lower(Material.name)==func.lower(name))
+    stmt = select(Material).filter(Material.name.ilike(f'%{name}%'))
     mat = session.execute(stmt).scalars().first()
     return mat
 
 def query_foods(session, name):
-    stmt = select(Food).filter(func.lower(Food.name)==func.lower(name))
+    stmt = select(Food).options(selectinload(Food.specialty_of)).filter(Food.name.ilike(f'%{name}%'))
     food = session.execute(stmt).scalars().first()
     return food
 

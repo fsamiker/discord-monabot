@@ -1,6 +1,8 @@
+from bot.utils.queries.misc_queries import query_updates
 from discord.ext.commands.cooldowns import BucketType
 from bot.utils.embeds import paginate_embed, send_temp_embed
 from discord.ext import commands
+from sqlalchemy.ext.asyncio import AsyncSession
 from bot.utils.help import GENSHIN_CANCEL_REMINDERS, GENSHIN_CHECKREMINDERS, GENSHIN_DATABASE_MD, GENSHIN_DB_ARTIFACT, GENSHIN_DB_CHAR, GENSHIN_DB_CHAR_ASC, GENSHIN_DB_DOMAIN, GENSHIN_DB_ENEMY, GENSHIN_DB_FOOD, GENSHIN_DB_MATERIAL, GENSHIN_DB_TAL, GENSHIN_DB_TAL_MAT, GENSHIN_DB_WEAPON, GENSHIN_DB_WEAPON_MAT, GENSHIN_DISCORD_MINIGAME, GENSHIN_GAME_ATTACK, GENSHIN_GAME_ATTACKABYSS, GENSHIN_GAME_CHECKABYSS, GENSHIN_GAME_CLAIM, GENSHIN_GAME_EXPLORE, GENSHIN_GAME_HEAL, GENSHIN_GAME_LEADERBOARDS, GENSHIN_GAME_MUG, GENSHIN_GAME_PRIMOLVLUP, GENSHIN_GAME_PROFILE, GENSHIN_GAME_START, GENSHIN_GAME_SWITCH, GENSHIN_GAME_WEATHER, GENSHIN_GAME_WISH, GENSHIN_REMINDME, GENSHIN_RESIN_CHECK, GENSHIN_RESIN_SET, GENSHIN_RESIN_TIME, REMINDERS_HELP, RESIN_STATUS
 import discord
 
@@ -13,6 +15,34 @@ class Core(commands.Cog):
     async def on_ready(self):
         print(f'{self.bot.user.name} has connected to Discord!')
         await self.bot.change_presence(activity=discord.Game(name="Type m!help"))
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
+    async def updates(self, ctx):
+        """Get recent monabot updates"""
+        if ctx.guild:
+            server_region = ctx.guild.region.name
+        else:
+            server_region = 'GMT'
+
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            updates = await s.run_sync(query_updates)
+            if not updates:
+                embed = discord.Embed(title='Monabot Updates', description='There does not seem to be any recent updates to retrieve')
+                await ctx.send(embed=embed)
+                return
+            else:
+                pages = []
+                for change in updates:
+                    change_date = self.convert_from_utc(change.timestamp, server_region).strftime("%d %b %Y")
+                    embed = discord.Embed(title='Monabot Updates', description=f'**{change_date}**\n', color=discord.Colour.purple())
+                    changes = change.get_changes()
+                    for k, v in changes.items():
+                        embed.add_field(name=k, value=v, inline=False)
+                    pages.append(embed)
+
+        await paginate_embed(self.bot, ctx, pages)
 
     @commands.command()
     @commands.guild_only()
@@ -115,3 +145,7 @@ class Core(commands.Cog):
             'attackabyss': discord.Embed(title="Geshin Minigame - Attack Abyss", description=GENSHIN_GAME_ATTACKABYSS, color=discord.Colour.blue()),
             'leaderboard': discord.Embed(title="Geshin Minigame - Leaderboard", description=GENSHIN_GAME_LEADERBOARDS, color=discord.Colour.blue())
         }
+
+    def convert_from_utc(self, time, server_region):
+        reminder_cog = self.bot.get_cog('Reminders')
+        return reminder_cog.convert_from_utc(time, server_region)

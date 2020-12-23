@@ -50,10 +50,7 @@ async def paginate_embed(bot, ctx, pages):
 
 async def send_temp_embed(bot, ctx, embed, discord_file=None):
     extra_footer = f'\nThis embed will expire in 60 seconds\nClick 📌 to keep it here or ❌ to close it'
-    if type(embed.footer.text) == str and extra_footer not in embed.footer.text:
-        embed.set_footer(text=(embed.footer.text + extra_footer))
-    else:
-        embed.set_footer(text=extra_footer)
+    embed.set_footer(text=extra_footer)
     if discord_file is None:
         message = await ctx.send(embed=embed)
     else:

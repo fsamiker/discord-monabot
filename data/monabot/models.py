@@ -44,6 +44,15 @@ class Update(Base):
     def update_list(self):
         return self.update_str.split(',')
 
+    def get_changes(self):
+        update_lst = self.update_str.split('###')
+        i = 0
+        updates = {}
+        while i < len(update_lst):
+            updates[update_lst[i]] = update_lst[i+1]
+            i += 2
+        return updates
+
 class GameProfile(Base):
     __tablename__ = 'gameprofiles'
     id = Column(Integer, primary_key=True)

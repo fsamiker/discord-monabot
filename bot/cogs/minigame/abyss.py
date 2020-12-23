@@ -40,16 +40,19 @@ class Abyss(commands.Cog):
                 random_boss = await s.run_sync(query_random_boss)
                 end = datetime.utcnow() + timedelta(seconds=self.BOSS_DURATION)
                 self._next_spawn_time = datetime.utcnow() + timedelta(seconds=self.ABYSS_INTERVAL)
-                total_lvls = await s.run_sync(query_total_players)
-                max_hp = self.calculate_boss_maxhp(total_lvls)
-                self._boss = {
-                    'hp': max_hp,
-                    'max_hp': max_hp,
-                    'name': random_boss.name,
-                    'end': end,
-                    'attackers': [],
-                    'icon_url': random_boss.icon_url
-                }
+                if not random_boss:
+                    pass
+                else:
+                    total_lvls = await s.run_sync(query_total_players)
+                    max_hp = self.calculate_boss_maxhp(total_lvls)
+                    self._boss = {
+                        'hp': max_hp,
+                        'max_hp': max_hp,
+                        'name': random_boss.name,
+                        'end': end,
+                        'attackers': [],
+                        'icon_url': random_boss.icon_url
+                    }
             await asyncio.sleep(self.ABYSS_INTERVAL)
 
     @commands.command()

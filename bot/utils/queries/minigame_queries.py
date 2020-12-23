@@ -1,7 +1,7 @@
 from data.monabot.models import GameCharacter, GameProfile
 from sqlalchemy.sql import select
 from sqlalchemy.orm import selectinload
-from  sqlalchemy.sql.expression import func
+from sqlalchemy.sql.expression import func
 
 def query_gameprofile(session, discord_id):
     stmt = select(GameProfile).\
