@@ -153,7 +153,7 @@ Example Usage:
                         timezone=server_region
                     )
                     s.add(r)
-                    message += f'{flair.get_emoji("Reminder")} Max Resin {flair.get_emoji("Resin")} set for {display_time}'
+                    message += f'{flair.get_emoji("Reminder")} Max Resin {flair.get_emoji("Resin")} -> {display_time}'
                 await s.commit()
 
         if option in ['specialty', 'mineral', 'artifact']:
@@ -194,7 +194,7 @@ Example Usage:
                         timezone=server_region
                     )
                     s.add(r)
-                    message += f'{flair.get_emoji("Reminder")} {typing} set for {display_time}'
+                    message += f'{flair.get_emoji("Reminder")} {typing} -> {display_time}'
                 await s.commit()
 
         await self._get_next_reminder()
@@ -221,7 +221,7 @@ Example Usage:
                     display_time = self.convert_from_utc(r.when, server_region).strftime("%I:%M %p, %d %b %Y")
                     embed.add_field(name=f'{r.typing}', value=f'{display_time}\nID: {r.id}', inline=True)
             else:
-                embed.description = 'No reminders found.\nYou can set reminders using m!remindme command'
+                embed.description = 'No reminders found.\nYou can set reminders using `m!remindme` command'
         
         await ctx.author.send(embed=embed)
 
@@ -265,8 +265,8 @@ Example Usage:
                 else:
                     s.delete(r)
                     await s.commit()
-                    await ctx.send(f'{r.typing} reminder id:{r.id} has been cancelled')
+                    await ctx.send(f'{r.typing} reminder ID:{r.id} has been cancelled')
             else:
-                await ctx.send(f'Could not find reminder id:{_id}')
+                await ctx.send(f'Could not find reminder ID:{_id}')
 
         await self._get_next_reminder()

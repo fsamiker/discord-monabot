@@ -24,6 +24,7 @@ class Resin(commands.Cog):
         if member is None:
             member = ctx.author
         member_name = member.display_name
+        flair = self.bot.get_cog("Flair")
         if ctx.guild:
             server_region = ctx.guild.region.name
         else:
@@ -40,14 +41,19 @@ class Resin(commands.Cog):
                 embed.description = 'No Record'
                 embed.set_footer(text='Run `m!setresin` to record resin')
             else:
+                reminder = await s.run_sync(query_reminder_by_typing, discord_id=ctx.author.id, typing='Max Resin')
+                if reminder:
+                    r_msg = f"\n{flair.get_emoji('Reminder')} Enabled"
+                else:
+                    r_msg = f"\n{flair.get_emoji('Reminder')} Not Enabled"
                 max_resin_time = self.get_max_resin_time(resin.timestamp, resin.resin)
                 display_time = self.convert_from_utc(max_resin_time, server_region).strftime("%I:%M %p, %d %b %Y")
                 now = datetime.utcnow()
                 if max_resin_time < now:
-                    embed.add_field(name= f'{self.bot.get_cog("Flair").get_emoji("Resin")} 160', value='\u200b')
+                    embed.add_field(name= f'{self.bot.get_cog("Flair").get_emoji("Resin")} 160', value=r_msg)
                 else:
                     current_resin = self.get_current_resin(resin.timestamp, resin.resin)
-                    embed.add_field(name= f'{self.bot.get_cog("Flair").get_emoji("Resin")} {current_resin}', value='\u200b')
+                    embed.add_field(name= f'{self.bot.get_cog("Flair").get_emoji("Resin")} {current_resin}', value=r_msg)
                 embed.set_footer(text=f'Max Resin At: {display_time}')
         
         await ctx.send(embed=embed)
@@ -85,7 +91,6 @@ class Resin(commands.Cog):
             embed.set_footer(text=f'Max Resin At: {display_time}')
             if r:
                 current_resin = self.get_current_resin(r.timestamp, r.resin)
-                embed.add_field(name= f'{flair.get_emoji("Resin")} {current_resin} -> {resin}', value='\u200b')
                 r.resin = resin
                 r.timestamp = now
                 # check for existing reminder
@@ -94,7 +99,10 @@ class Resin(commands.Cog):
                     reminder.when=max_resin_time
                     reminder.timezone=server_region
                     reminder.channel=str(ctx.channel.id)
-                    desc += f"\n{flair.get_emoji('Reminder')} 'Max Resin' reminder adjusted to {display_time}"
+                    r_msg = f"\n{flair.get_emoji('Reminder')} adjusted to {display_time}"
+                    embed.add_field(name= f'{flair.get_emoji("Resin")} {current_resin} -> {resin}', value=r_msg)
+                else:
+                    embed.add_field(name= f'{flair.get_emoji("Resin")} {current_resin} -> {resin}', value=f"\n{flair.get_emoji('Reminder')} Not Enabled")
             else:
                 # set new entry
                 r = resinmodel(
@@ -104,7 +112,7 @@ class Resin(commands.Cog):
                 )
                 s.add(r)
                 desc += f'Set current resin value'
-                embed.add_field(name= f'{flair.get_emoji("Resin")} {resin}', value='\u200b')
+                embed.add_field(name= f'{flair.get_emoji("Resin")} {resin}', value=f"\n{flair.get_emoji('Reminder')} Not Enabled")
             await s.commit()
             
         embed.description = desc.strip()
