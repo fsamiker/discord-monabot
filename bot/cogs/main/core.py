@@ -54,6 +54,15 @@ class Core(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
+    async def invitemona(self, ctx):
+        """Get Mona invite link"""
+        desc = 'Share the word that mona is on discord!\nYou can invite mona to other servers with the following link:\n[Invite Link](https://discord.com/api/oauth2/authorize?client_id=781525788759031820&permissions=519232&scope=bot)'
+        embed = discord.Embed(title='Invite Mona', description=desc, color=discord.Colour.purple())
+        embed.set_thumbnail(url=self.bot.user.avatar_url, )
+        await ctx.send(embed=embed)
+
+    @commands.command()
     @commands.guild_only()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def help(self, ctx, *arg):

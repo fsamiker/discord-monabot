@@ -12,6 +12,7 @@ Scroll by using the reaction emojis ◀️ ▶️ or type one of the following t
 ```
 updates             Monabot update logs
 support             Support resource links
+invitemona          Share Monabot with your friends
 ```
 '''
 

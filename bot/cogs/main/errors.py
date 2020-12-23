@@ -67,6 +67,7 @@ class ErrorHandler(commands.Cog):
             permissions = ['View Channel', 'Send Messages', 'Embed Links', 'Attach Files', 'Add Reactions', 'Use External Emoji', 'Mention roles', 'Manage Messages', 'Read Message History']
             p_list = '\u2022 '+ '\n\u2022 '.join(permissions)
             msg = f'It seems mona is missing some permissions for full functionality\n\nKindly check that the following permissions are granted:\n{p_list}'
+            msg += f'\n\nRest assured these permissions are to provide a richer experience such as better response UI using embeds and paginated pages with reaction management'
             msg += f"\n\n[How to add permission](https://support.discord.com/hc/en-us/articles/206029707-How-do-I-set-up-Permissions-#:~:text=Assigning%20Roles&text=Click%20on%20the%20'Members'%20tab,you%20assigned%20to%20that%20role.)"
             await self.send_error_embed(ctx, f"Missing Permissions Error", msg)
             return
