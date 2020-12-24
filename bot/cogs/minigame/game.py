@@ -510,7 +510,7 @@ class Game(commands.Cog):
         if n > 10:
             await send_game_embed_misc(ctx, 'Calm Down...', 'Maximum 10 explorations at a time')
             return
-        cost = n*10
+        cost = 10
         flair = self.bot.get_cog("Flair")
         title = f'Exploration Logs'
         color = discord.Colour.blue()
@@ -524,15 +524,15 @@ class Game(commands.Cog):
             if user.deathtime:
                 await send_game_embed_misc(ctx, 'Invalid Action', f'You are currently respawning!')
                 return
-            if user.stamina < cost:
+            if user.stamina < cost*n:
                 await send_game_embed_misc(ctx, 'Invalid Action', f'Sorry you do not have enough stamina. Go take a nap and come back later')
                 return
-            user.stamina -= cost
             msgs = []
 
             for i in range(n):
                 if user.deathtime or user.stamina < cost:
                     break
+                user.stamina -= cost
                 random_event = random.randint(1, 1000)
                 # Trigger random event
                 if random_event == 999:
