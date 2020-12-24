@@ -103,6 +103,7 @@ class Abyss(commands.Cog):
         await ctx.send(embed=embed, file=file)
 
     @commands.command()
+    @commands.guild_only()
     @commands.cooldown(1,1,BucketType.user)
     @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def attackabyss(self, ctx):

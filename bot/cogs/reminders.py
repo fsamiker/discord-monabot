@@ -1,3 +1,4 @@
+from discord.ext.commands.errors import UserInputError
 from bot.utils.queries.resin_queries import query_resin
 from bot.utils.queries.reminder_queries import query_all_reminders, query_next_reminder, query_reminder_by_id, query_reminder_by_typing
 import discord
@@ -76,20 +77,6 @@ class Reminders(commands.Cog):
     async def remindme(self, ctx, *args):
         """Sets reminder"""
 
-        async def usage(message):
-            examples = '''```Command: remindme <option> <values>         
-Options: \u2022 resin - Max Resin reminder. Value = current resin value
-         \u2022 specialty - Local Specialty reminder
-         \u2022 mineral - Mineral Mining reminder
-         \u2022 artifact - Artifact Run reminder
-
-Example Usage:
-\u2022 m!remindme resin 50
-\u2022 m!remindme specialty
-\u2022 m!remindme mineral
-\u2022 m!remindme artifact```'''
-            await ctx.send(f'{message}\n{examples}')
-
         if not args:
             raise commands.UserInputError
 
@@ -102,15 +89,13 @@ Example Usage:
         message = ''
 
         if option not in ['resin', 'specialty', 'mineral', 'artifact']:
-            await usage('Invalid option')
-            return
+            raise UserInputError
 
         # resin reminder
         if option == 'resin':
             # validate resin input
             if len(args) != 2:
-                await usage('Invalid Command')
-                return
+                raise UserInputError
             resin_cog = self.bot.get_cog('Resin')
             error = resin_cog.verify_resin(args[1])
             if error is not None:
@@ -159,8 +144,7 @@ Example Usage:
         if option in ['specialty', 'mineral', 'artifact']:
             # validate specialty input
             if len(args) != 1:
-                await usage('Invalid Command')
-                return
+                raise UserInputError
             if option == 'specialty':
                 days=2
                 typing = 'Local Specialty Respawn'
@@ -230,16 +214,6 @@ Example Usage:
     async def cancelreminder(self, ctx, value):
         """Cancel a current reminder"""
 
-        async def usage(message):
-            examples = '''```Command: cancelreminder <reminder ID or all>         
-Reminder ID: Reminder ID to be canceled. Get ID from checkreminders. Refer [#id<number>] in list
-All: Cancels all users reminders
-
-Example Usage:
-\u2022 m!cancelreminder 5
-\u2022 m!cancelreminder all```'''
-            await ctx.send(f'{message}\n{examples}')
-
         if value.lower() == 'all':
             async with AsyncSession(self.bot.get_cog('Query').engine) as s:
                 r = await s.run_sync(query_all_reminders, discord_id=ctx.author.id)
@@ -253,8 +227,7 @@ Example Usage:
         try:
             _id = int(value)
         except:
-            await usage(f'ID should be a number. Check reminder id with m!checkreminders')
-            return
+            raise UserInputError
         
         async with AsyncSession(self.bot.get_cog('Query').engine) as s:
             r = await s.run_sync(query_reminder_by_id, _id=_id)

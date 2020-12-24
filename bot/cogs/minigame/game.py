@@ -153,6 +153,7 @@ class Game(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
+    @commands.guild_only()
     @commands.cooldown(1,1,BucketType.user)
     @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def wish(self, ctx, n:int=1):
@@ -315,6 +316,7 @@ class Game(commands.Cog):
             await s.commit()
 
     @commands.command()
+    @commands.guild_only()
     @commands.cooldown(1,1,BucketType.user)
     async def claimdaily(self, ctx):
         """Claim daily primogems"""
@@ -402,6 +404,7 @@ class Game(commands.Cog):
             await s.commit()
                 
     @commands.command()
+    @commands.guild_only()
     @commands.cooldown(1,1,BucketType.user)
     async def primolvlup(self, ctx):
         """Spend 3000 primogems for an instant lvlup"""
@@ -467,6 +470,7 @@ class Game(commands.Cog):
             await s.commit()
 
     @commands.command()
+    @commands.guild_only()
     @commands.cooldown(1,1,BucketType.user)
     async def switchactive(self, ctx, name:str):
         """Switch active character"""

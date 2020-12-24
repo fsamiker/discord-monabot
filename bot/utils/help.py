@@ -1,12 +1,60 @@
 GENSHIN_GENERAL_MD = '''
 There are currently **4 main categories** of commands.
 
-Scroll by using the reaction emojis ◀️ ▶️ or type one of the following to check out each category in detail:
+To user commands, prefix with `m!`
+Example: `m!character mona`
 
-💽 Genshin Database:   `m!help genshin database`
-⏰ Reminders:          `m!help reminders` 
-🌙 Resin Status:       `m!help resin status` 
-🕹️ Genshin Minigame:   `m!help genshin minigame`
+💽 Genshin Database:
+`character` `ascensionmaterial` `talent` `talentmaterial` `material` 
+`food` `weapon` `weaponmaterial` `artifact` `domain` `enemy`
+
+⏰ Reminders:
+`remindme resin` `remindme specialty` `remindme artifact`
+`checkreminders` `cancelreminder`
+
+🌙 Resin Status:
+`setresin` `checkresin` `timetoresin`
+
+🕹️ Genshin Minigame:
+`startadventure` `leaderboard` `checkweather` `claimdaily` `profile`
+`wish` `primolvlup` `switchactive` `checkabyss` `explore` `attack` `mug`
+`attackabyss`
+
+**Misc:**
+```
+updates             Monabot update logs
+support             Support resource links
+invitemona          Share Monabot with your friends
+```
+'''
+
+GENSHIN_GENERAL_MD_V2 = '''
+```diff
+- You are currently viewing a shortened version of `help` as a permission seems to be missing for Mona
+- Kindly enable *Manage Message* permission to enable a richer help interface
+```
+
+To user commands, prefix with `m!`
+Example: `m!character mona`
+
+There are currently **4 main categories** of commands.
+use `m!help <command name>` for more details
+
+💽 Genshin Database:
+`character` `ascensionmaterial` `talent` `talentmaterial` `material` 
+`food` `weapon` `weaponmaterial` `artifact` `domain` `enemy`
+
+⏰ Reminders:
+`remindme resin` `remindme specialty` `remindme artifact`
+`checkreminders` `cancelreminder`
+
+🌙 Resin Status:
+`setresin` `checkresin` `timetoresin`
+
+🕹️ Genshin Minigame:
+`startadventure` `leaderboard` `checkweather` `claimdaily` `profile`
+`wish` `primolvlup` `switchactive` `checkabyss` `explore` `attack` `mug`
+`attackabyss`
 
 **Misc:**
 ```
@@ -19,7 +67,7 @@ invitemona          Share Monabot with your friends
 GENSHIN_DATABASE_MD = '''
 Access curated details on all things genshin from [Genshin Wiki](https://genshin-impact.fandom.com/wiki/Genshin_Impact_Wiki)
 
-Run `m!help` genshin database or `m!<command name>` for more details on each command
+Run `m!help` genshin database or `m!help<command name>` for more details on each command
 
 **Character:**
 ```
@@ -49,7 +97,7 @@ enemy               Get enemy/boss details
 GENSHIN_DISCORD_MINIGAME = '''
 Genshin minigame right on discord!
 
-Run `m!help genshin minigame` or `m!<command name>` for more details on each command
+Run `m!help genshin minigame` or `m!help<command name>` for more details on each command
 
 **Start Game:**
 ```
@@ -81,7 +129,7 @@ REMINDERS_HELP = '''
 Set reminders for genshin related activities.
 Never lose out on resin
 
-Run `m!help reminders` for or `m!<command name>` more details on each command
+Run `m!help reminders` for or `m!help<command name>` more details on each command
 
 **Reminders:**
 ```
@@ -100,7 +148,7 @@ cancelreminder      Cancel an active reminder
 RESIN_STATUS = '''
 Check the state of your resin in genshin
 
-Run `m!help resin status` or `m!<command name>` for more details on each command
+Run `m!help resin status` or `m!help<command name>` for more details on each command
 
 **Commands:**
 ```
@@ -552,5 +600,16 @@ Monabot support resource links
 Example Usage:
 ```
 m!support
+```
+'''
+
+GENSHIN_INVITE_MONA= '''
+Get Monabot invite link with recommended permissions
+
+> m!invitemona
+
+Example Usage:
+```
+m!invitemona
 ```
 '''
