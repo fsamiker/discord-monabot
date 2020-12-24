@@ -553,7 +553,7 @@ class Game(commands.Cog):
                     user.primogems -= stolen
                     msgs.append(f'{ctx.author.display_name} was investigation Dunyu Ruins when an invisible Fatui agent snuck up and snatched his purse!\nLost {flair.get_emoji("Primogem")} {stolen}!')
                 elif random_event >= 959:
-                    dmg = user.level*750
+                    dmg = user.level*150
                     user.health -= dmg
                     user = self.check_death(user)
                     msg = f'Stepped on a buried bomb. Kaboom!\n{ctx.author.display_name} took {dmg} damage'
