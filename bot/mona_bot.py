@@ -20,6 +20,7 @@ from bot.cogs.database.domain import Domains as DomainCog
 from bot.cogs.database.core_db import Query as QueryCog
 from bot.cogs.minigame.abyss import Abyss as AbyssCog
 from bot.cogs.minigame.leaderboards import Leaderboards as LeaderCog
+from bot.cogs.main.topgg import Topgg
 
 import os
 
@@ -30,6 +31,7 @@ import discord
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 DB_URI = os.getenv('ASYNC_DB_URI')
+TOPGG_TOKEN = os.getenv('TOPGG_TOKEN')
 
 # Set Logging
 import logging
@@ -68,6 +70,7 @@ bot.add_cog(EnemyCog(bot))
 bot.add_cog(WeaponCog(bot))
 bot.add_cog(ArtifactCog(bot))
 bot.add_cog(DomainCog(bot))
+bot.add_cog(Topgg(bot))
 bot.add_cog(ErrorHandler(bot))
 
 # Run Bot
