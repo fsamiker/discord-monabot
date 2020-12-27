@@ -70,7 +70,7 @@ bot.add_cog(EnemyCog(bot))
 bot.add_cog(WeaponCog(bot))
 bot.add_cog(ArtifactCog(bot))
 bot.add_cog(DomainCog(bot))
-bot.add_cog(Topgg(bot))
+bot.add_cog(Topgg(bot, TOPGG_TOKEN))
 bot.add_cog(ErrorHandler(bot))
 
 # Run Bot
