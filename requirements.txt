@@ -27,3 +27,5 @@ asyncpg==0.21.0
 greenlet==1.0a1
 importlib-metadata==3.3.0
 zipp==3.4.0
+dblpy==0.4.0
+ratelimiter==1.2.0.post0
