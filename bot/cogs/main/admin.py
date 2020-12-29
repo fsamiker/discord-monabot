@@ -26,4 +26,13 @@ class Admin(commands.Cog):
         u_count = sum([g.member_count for g in self.bot.guilds])
         await ctx.send(f'Number of servers in: {g_count}\nNumber of users in: {u_count}')
 
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def update_status_gbg(self, ctx, option:str='playing', *arg):
+        msg = ' '.join(arg)
+        if option.lower() == 'playing':
+            await self.bot.change_presence(activity=discord.Game(name=msg))
+        else:
+            await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=msg))
+
     

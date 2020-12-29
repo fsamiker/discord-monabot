@@ -13,6 +13,7 @@ class Reminder(Base):
     message = Column(String)
     typing = Column(String)
     timezone = Column(String)
+    value = Column(String)
 
     def to_dict(self):
         return {

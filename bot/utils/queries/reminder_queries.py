@@ -15,9 +15,14 @@ def query_reminder_by_id(session, _id):
     return remind
 
 def query_reminder_by_typing(session, discord_id, typing):
-    stmt = select(Reminder).filter_by(discord_id=discord_id, typing=typing)
+    stmt = select(Reminder).filter_by(discord_id=discord_id).filter(Reminder.typing.like(typing)).filter(~Reminder.typing.like(f'%Custom%'))
     remind = session.execute(stmt).scalars().first()
     return remind
+
+def query_reminder_by_typing_all(session, discord_id, typing):
+    stmt = select(Reminder).filter_by(discord_id=discord_id).filter(Reminder.typing.like(f'Custom%'))
+    reminds = session.execute(stmt).scalars().all()
+    return reminds
 
 def query_all_reminders(session, discord_id):
     stmt = select(Reminder).filter_by(discord_id=discord_id)

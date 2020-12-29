@@ -319,17 +319,24 @@ Set reminders. Mona will dm you when its time!
 
 > m!remindme <option> <values>
 ```
-Options: \u2022 resin - Max Resin reminder. Value = current resin value
-         \u2022 specialty - Local Specialty reminder
-         \u2022 mineral - Mineral Mining reminder
-         \u2022 artifact - Artifact Run reminder
+Options: 
+\u2022 resin - Max Resin reminder. Value = current resin value, target value (default: 160)
+\u2022 specialty - Local Specialty reminder
+\u2022 mineral - Mineral Mining reminder
+\u2022 artifact - Artifact Run reminder
+\u2022 wei - Unusual Hilichurl respawn reminder
+\u2022 custom - Custom Reminder (Max 3 per user) Value = duration (Max 60 days), message
 ```
 Example Usage:
 ```
 m!remindme resin 50
+m!remindme resin 50 120
 m!remindme specialty
 m!remindme mineral
 m!remindme artifact
+m!remindme wei
+m!remindme custom 5d5hr5min5sec take a shower
+m!remindme custom 30d wish mona happy birthday
 ```
 '''
 
@@ -361,12 +368,16 @@ Set current genshin ingame resin value. Mona will track your resin replenishment
 Note: This does not set a reminder. Reminder has to be enabled separately.
 However if reminder is already active, reminder will automatically be readjusted
 
-> m!setresin <current resin>
+> m!setresin <current resin> optional: <time left to next resin>
+
+timeleft: Time remaining to next resin. Allows for a more accurate adjustment of resin time (default: 8min)
 
 Example Usage:
 ```
 m!setresin 120
-m!setresin 69
+m!setresin 69 3min
+m!setresin 42 5min50sec
+m!setresin 88 50sec
 ```
 '''
 
@@ -613,3 +624,9 @@ Example Usage:
 m!invitemona
 ```
 '''
+
+TIMEZONE_NOTICE = '''
+```fix
+[NOTICE: Discord DM channels do not support timezones. Times seen are defaulted to GMT.
+Kindly send command from a guild channel for times corrected to guild server's region]
+```'''

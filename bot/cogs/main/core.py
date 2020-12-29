@@ -49,7 +49,7 @@ class Core(commands.Cog):
     async def support(self, ctx):
         """Get monabot support resource links"""
 
-        desc = '\u2022 [Discord Support Server](https://discord.gg/mgvEPfzDEs)'
+        desc = '\u2022 [Discord Support Server](https://discord.gg/mgvEPfzDEs)\u2022 [Top GG Page](https://top.gg/bot/781525788759031820)'
         embed = discord.Embed(title='Support Resource Links', description=desc, color=discord.Colour.purple())
         await ctx.send(embed=embed)
 

@@ -1,4 +1,4 @@
-from bot.utils.error import NoResultError
+from bot.utils.error import NoResultError, ResinError
 from datetime import datetime, timedelta
 import discord
 from discord.ext import commands
@@ -40,6 +40,12 @@ class ErrorHandler(commands.Cog):
         # If nothing is found. We keep the exception passed to on_command_error.
         error = getattr(error, 'original', error)
 
+        if isinstance(error, ResinError):
+            await self.send_error_embed(ctx, f"Resin Value Error",
+             description=f"Invalid Resin Value.\nResin value should be a number and not > 160\n"
+                         f"Please use `{self.bot.command_prefix}help {ctx.command}` "
+                         f"for command details")
+            return
 
         if isinstance(error, commands.BotMissingPermissions):
             missing = [perm.replace('_', ' ').replace('guild', 'server').title() for perm in error.missing_perms]

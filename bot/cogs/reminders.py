@@ -1,6 +1,7 @@
+from bot.utils.help import TIMEZONE_NOTICE
 from discord.ext.commands.errors import UserInputError
 from bot.utils.queries.resin_queries import query_resin
-from bot.utils.queries.reminder_queries import query_all_reminders, query_next_reminder, query_reminder_by_id, query_reminder_by_typing
+from bot.utils.queries.reminder_queries import query_all_reminders, query_next_reminder, query_reminder_by_id, query_reminder_by_typing, query_reminder_by_typing_all
 import discord
 from discord.ext.commands.cooldowns import BucketType
 from data.monabot.models import Reminder, Resin
@@ -10,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import asyncio
 import json
 import pytz
+import re
 
 class Reminders(commands.Cog):
 
@@ -18,6 +20,7 @@ class Reminders(commands.Cog):
         self.tz = self._load_timezones()
         self._next_reminder = {}
         self._enable_reminders = True
+        self.duration_regex = re.compile(r'((?P<days>\d+?)d)?((?P<hours>\d+?)hr)?((?P<minutes>\d+?)min)?((?P<seconds>\d+?)sec)?')
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -72,6 +75,17 @@ class Reminders(commands.Cog):
         utc_tz = pytz.timezone('UTC')
         return utc_tz.localize(time).astimezone(user_tz)
 
+    def parse_duration(self, time_str):
+        parts = self.duration_regex.match(time_str)
+        if not parts:
+            return
+        parts = parts.groupdict()
+        time_params = {}
+        for (name, param) in parts.items():
+            if param:
+                time_params[name] = int(param)
+        return timedelta(**time_params)
+
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def remindme(self, ctx, *args):
@@ -88,26 +102,29 @@ class Reminders(commands.Cog):
             server_region = 'GMT'
         message = ''
 
-        if option not in ['resin', 'specialty', 'mineral', 'artifact']:
+        if option not in ['resin', 'specialty', 'mineral', 'artifact', 'wei', 'custom']:
             raise UserInputError
 
         # resin reminder
         if option == 'resin':
             # validate resin input
-            if len(args) != 2:
+            if len(args) < 2 or len(args) > 3:
                 raise UserInputError
             resin_cog = self.bot.get_cog('Resin')
-            error = resin_cog.verify_resin(args[1])
-            if error is not None:
-                await ctx.send(f'{error}')
-                return
+            resin_cog.verify_resin(args[1])
+            resin_value = int(args[1])
+            if len(args) == 3:
+                resin_cog.verify_resin(args[2])
+                target_resin = int(args[2])
+            else:
+                target_resin = 160
+            if target_resin <= resin_value:
+                raise UserInputError
+            
 
             async with AsyncSession(self.bot.get_cog('Query').engine) as s:
-                resin_value = int(args[1])
                 resin = await s.run_sync(query_resin, discord_id=ctx.author.id)
                 now = datetime.utcnow()
-                max_resin_time = resin_cog.get_max_resin_time(now, resin_value)
-                display_time = self.convert_from_utc(max_resin_time, server_region).strftime("%I:%M %p, %d %b %Y")
                 # Check existing resin entry
                 if resin:
                     resin.resin=resin_value
@@ -120,28 +137,33 @@ class Reminders(commands.Cog):
                         timestamp=now
                     )
                     s.add(resin)
+                resin_time = resin_cog.get_resin_time(resin.timestamp, resin.resin, target_resin)
+                target_display_time = self.convert_from_utc(resin_time, server_region).strftime("%I:%M %p, %d %b %Y")
                 # Check existing reminder
-                r = await s.run_sync(query_reminder_by_typing, discord_id=ctx.author.id, typing='Max Resin')
+                r = await s.run_sync(query_reminder_by_typing, discord_id=ctx.author.id, typing=f'Resin%')
                 if r:
-                    r.when = max_resin_time
+                    r.when = resin_time
                     r.timezone = server_region
                     r.channel = str(ctx.channel.id)
-                    message += f'Existing reminder found, updated to {display_time}'
+                    r.message = f'Your {flair.get_emoji("Resin")} resin has reached {target_resin}!'
+                    r.value = str(target_resin)
+                    message += f'Existing reminder found. Updated to {target_display_time}, Resin Threshold: {flair.get_emoji("Resin")} {target_resin}'
                 # Create new reminder
                 else:
                     r = Reminder(
                         discord_id=ctx.author.id,
-                        when=max_resin_time,
+                        when=resin_time,
                         channel=str(ctx.channel.id),
-                        message=f'Your {flair.get_emoji("Resin")} resin is full!',
-                        typing='Max Resin',
-                        timezone=server_region
+                        message=f'Your {flair.get_emoji("Resin")} resin has reached {target_resin}!',
+                        typing=f'Resin {target_resin}',
+                        timezone=server_region,
+                        value=str(target_resin)
                     )
                     s.add(r)
-                    message += f'{flair.get_emoji("Reminder")} Max Resin {flair.get_emoji("Resin")} -> {display_time}'
+                    message += f'{flair.get_emoji("Reminder")} Resin {target_resin} {flair.get_emoji("Resin")} -> {target_display_time}'
                 await s.commit()
 
-        if option in ['specialty', 'mineral', 'artifact']:
+        if option in ['specialty', 'mineral', 'artifact', 'wei']:
             # validate specialty input
             if len(args) != 1:
                 raise UserInputError
@@ -157,6 +179,10 @@ class Reminders(commands.Cog):
                 days=1
                 typing = 'Artifact Run Respawn'
                 r_msg = f'Your Artifact Run has respawned!'
+            elif option == 'wei':
+                days=0.5
+                typing = 'Wei Respawn'
+                r_msg = f'Your Wei has respawned!'
             async with AsyncSession(self.bot.get_cog('Query').engine) as s:
                 now = datetime.utcnow()+timedelta(days=days)
                 display_time = self.convert_from_utc(now, server_region).strftime("%I:%M %p, %d %b %Y")
@@ -181,7 +207,43 @@ class Reminders(commands.Cog):
                     message += f'{flair.get_emoji("Reminder")} {typing} -> {display_time}'
                 await s.commit()
 
+        if option == 'custom':
+            #Validate custom input
+            if len(args) < 3:
+                raise UserInputError
+            r_msg = ' '.join(args[2:])
+            when = self.parse_duration(args[1])
+            if when is None or when > timedelta(days=60):
+                raise UserInputError
+            now = datetime.utcnow()+when
+            display_time = self.convert_from_utc(now, server_region).strftime("%I:%M %p, %d %b %Y")
+            async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            # Check existing reminder
+                r = await s.run_sync(query_reminder_by_typing_all, discord_id=ctx.author.id, typing='Custom')
+                if r and len(r) >= 3:
+                    message += 'Maximum of 3 Custom Reminders already reached. Run `m!cancelreminder` to delete one before setting a new one.'
+                else:
+                    if len(r_msg) > 10:
+                        typing = f'Custom "{r_msg[:10]}..."'
+                    else:
+                        typing = f'Custom "{r_msg}"'
+
+                    r = Reminder(
+                        discord_id=ctx.author.id,
+                        when=now,
+                        channel=str(ctx.channel.id),
+                        message=f'Customer Reminder: {r_msg}',
+                        typing=typing,
+                        timezone=server_region
+                    )
+                    s.add(r)
+                    message += f'{flair.get_emoji("Reminder")} Custom Reminder "{r_msg}" -> {display_time}'
+                await s.commit()
+
         await self._get_next_reminder()
+
+        if isinstance(ctx.channel, discord.channel.DMChannel):
+            message += TIMEZONE_NOTICE
         await ctx.send(message)
 
     @commands.command()
@@ -200,6 +262,8 @@ class Reminders(commands.Cog):
             reminders = await s.run_sync(query_all_reminders, discord_id=ctx.author.id)
             if reminders:
                 embed.description = 'Below is a list of your active reminders'
+                if isinstance(ctx.channel, discord.channel.DMChannel):
+                    embed.description += TIMEZONE_NOTICE
                 embed.set_footer(text=f'*Times are in {server_region.capitalize()} timezone')
                 for r in reminders:
                     display_time = self.convert_from_utc(r.when, server_region).strftime("%I:%M %p, %d %b %Y")
