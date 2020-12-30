@@ -1,6 +1,10 @@
+from bot.utils.queries.minigame_queries import query_gameprofile
+from data.monabot.models import Vote
+from bot.utils.queries.vote_queries import query_vote
 from datetime import datetime, timedelta
 import discord
 from discord.ext.commands.cooldowns import BucketType
+from sqlalchemy.ext.asyncio import AsyncSession
 from discord.ext import commands
 import dbl
 
@@ -9,27 +13,50 @@ class Topgg(commands.Cog):
         self.bot = bot
         self.voted = {}
         self.dbl_token = dbl_token
-        self.dblpy = dbl.DBLClient(self.bot, self.dbl_token, autopost=True)
+        self.dblpy = dbl.DBLClient(self.bot, self.dbl_token,
+         webhook_path='/dblwebhook', webhook_auth='t3ZEQQoQRXgnWmxWEP4R', webhook_port=5000,
+         autopost=True)
 
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'Connecting to topgg server...')
 
+    @commands.Cog.listener()
     async def on_guild_post():
         print("Server count posted successfully")
 
-    def has_voted(self, discord_id):
-        now = datetime.utcnow()
-        if discord_id in self.voted.keys() and self.voted[discord_id] > now:
-            return True
-        else:
-            return False
+    @commands.Cog.listener()
+    async def on_dbl_test(self, data):
+        print(data)
 
-    def vote(self, discord_id):
-        if self.has_voted(discord_id):
-            return
-        self.voted[discord_id] = datetime.utcnow()
-        return True
+    @commands.Cog.listener()
+    async def on_dbl_vote(self, data):
+        discord_id = 123123
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            voter = await s.run_sync(query_vote, discord_id=discord_id)
+            if not voter:
+                v = Vote(
+                    discord_id=discord_id,
+                    timestamp=datetime.utcnow()
+                )
+                s.add(v)
+            else:
+                voter.timestamp=datetime.utcnow()
+            await s.commit()
+        await self.reward_vote(discord_id)
+        print(data)
+
+    async def reward_vote(self, discord_id):
+        user = self.bot.get_user(discord_id)
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            profile = await s.run_sync(query_gameprofile, discord_id=discord_id)
+            if user is not None and profile:
+                try:
+                    embed = discord.Embed(title='Thank You!', description=f'Thanks for the support!\n200 {self.bot.get_cog("Flair").get_emoji("Primogem")} added to minigame profile',
+                    color=discord.Colour.purple())
+                    await user.send(embed=embed)
+                except:
+                    print(f'Failed to send to user {user}')
 
     def get_duration(self, time):
         raw = time.total_seconds()
@@ -45,24 +72,25 @@ class Topgg(commands.Cog):
             time_str += f'{seconds} sec(s)'
         return time_str
 
-    
-
     @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def vote(self, ctx):
-        """Claim Mona Vote Primogems"""
+        """Vote for Mona"""
 
         embed = discord.Embed(title='Vote Mona', color=discord.Colour.purple())
         embed.set_thumbnail(url=self.bot.user.avatar_url, )
         embed.set_footer(text=f'@{ctx.author.name}')
 
         # check if user has voted
-
-        if self.has_voted(ctx.author.id):
-            next_votetime = self.voted[ctx.author.id]+timedelta(hours=12)
-            time_delta = next_votetime-datetime.utcnow()
-            duration = self.get_duration(time_delta)
-            embed.description = f'You have already voted for Mona\nThanks for the Support!\n\n**Next vote available in: {duration}**'
-        else:
-            embed.description = f"If you have enjoyed **Monabot**\nVote on [Topgg](https://top.gg/bot/781525788759031820/vote)\n\nClaim 200 {self.bot.get_cog('Flair').get_emoji('Primogem')} for Mona's Minigame every 12 hours\nThanks for your support!"
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            voter = await s.run_sync(query_vote, discord_id=ctx.author.id)
+            now=datetime.utcnow()
+            next_votetime = voter.timestamp+timedelta(hours=12)
+            if voter is not None and next_votetime < now:
+                time_delta = next_votetime-datetime.utcnow()
+                duration = self.get_duration(time_delta)
+                embed.description = f'You have already voted for Mona\nThanks for the Support!\n\n**Next vote available in: {duration}**'
+            else:
+                embed.description = f"If you have enjoyed **Monabot**\nVote on [Topgg](https://top.gg/bot/781525788759031820/vote)\n\nRecieve 200 {self.bot.get_cog('Flair').get_emoji('Primogem')} for Mona's Minigame every 12 hours\nThanks for your support!"
 
         await ctx.send(embed=embed)

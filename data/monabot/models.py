@@ -54,6 +54,12 @@ class Update(Base):
             i += 2
         return updates
 
+class Vote(Base):
+    __tablename__ = 'votes'
+    id = Column(Integer, primary_key=True)
+    discord_id = Column(BigInteger, unique=True)
+    timestamp = Column(DateTime)
+
 class GameProfile(Base):
     __tablename__ = 'gameprofiles'
     id = Column(Integer, primary_key=True)
