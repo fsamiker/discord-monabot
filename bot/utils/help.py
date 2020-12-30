@@ -18,10 +18,11 @@ Example: `m!character mona`
 🕹️ Genshin Minigame:
 `startadventure` `leaderboard` `checkweather` `claimdaily` `profile`
 `wish` `primolvlup` `switchactive` `checkabyss` `explore` `attack` `mug`
-`attackabyss`
+`attackabyss` `vote`
 
 **Misc:**
 ```
+vote                Support Mona if you've enjoyed the bot
 updates             Monabot update logs
 support             Support resource links
 invitemona          Share Monabot with your friends
@@ -113,6 +114,7 @@ wish                Make a wish!
 primolvlup          Spend 3000 primogems and lvlup!
 switchactive        Switch active character
 checkabyss          Check Discord Abyss
+vote                Support Mona if you've enjoyed the bot
 ```
 **Stamina Actions:**
 Commands that cost stamina
@@ -630,3 +632,18 @@ TIMEZONE_NOTICE = '''
 [NOTICE: Discord DM channels do not support timezones. Times seen are defaulted to GMT.
 Kindly send command from a guild channel for times corrected to guild server's region]
 ```'''
+GENSHIN_VOTE_MONA= '''
+Vote for Monabot on TopGG if you've enjoyed the bot
+
+200 minigame primogems will be given each time you vote as a thank you
+Must have started adventure with `m!startadventure` to recieve primogems
+
+Voting available every 12 hours
+
+> m!vote
+
+Example Usage:
+```
+m!vote
+```
+'''
