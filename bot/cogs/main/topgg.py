@@ -32,7 +32,7 @@ class Topgg(commands.Cog):
 
     @commands.Cog.listener()
     async def on_dbl_vote(self, data):
-        discord_id = data['user']
+        discord_id = int(data['user'])
         async with AsyncSession(self.bot.get_cog('Query').engine) as s:
             voter = await s.run_sync(query_vote, discord_id=discord_id)
             if not voter:
@@ -45,7 +45,7 @@ class Topgg(commands.Cog):
                 voter.timestamp=datetime.utcnow()
             await s.commit()
         await self.reward_vote(discord_id)
-        print(data)
+        print(f'New vote: {data}')
 
     async def reward_vote(self, discord_id):
         user = self.bot.get_user(discord_id)
