@@ -51,12 +51,14 @@ class Topgg(commands.Cog):
         async with AsyncSession(self.bot.get_cog('Query').engine) as s:
             profile = await s.run_sync(query_gameprofile, discord_id=discord_id)
             if user is not None and profile:
+                profile.primogems += 200
                 try:
                     embed = discord.Embed(title='Thank You!', description=f'Thanks for the support!\n200 {self.bot.get_cog("Flair").get_emoji("Primogem")} added to minigame profile',
                     color=discord.Colour.purple())
                     await user.send(embed=embed)
                 except:
                     print(f'Failed to send to user {user}')
+                await s.commit()
 
     def get_duration(self, time):
         raw = time.total_seconds()
