@@ -94,6 +94,6 @@ class Topgg(commands.Cog):
                 duration = self.get_duration(time_delta)
                 embed.description = f'You have already voted for Mona\nThanks for the Support!\n\n**Next vote available in: {duration}**'
             else:
-                embed.description = f"If you have enjoyed **Monabot**\nVote on [Topgg](https://top.gg/bot/781525788759031820/vote)\n\nRecieve 200 {self.bot.get_cog('Flair').get_emoji('Primogem')} for Mona's Minigame every 12 hours\nThanks for your support!"
+                embed.description = f"If you have enjoyed **Monabot**\nVote on [Topgg](https://top.gg/bot/781525788759031820/vote)\n\nRecieve 300 {self.bot.get_cog('Flair').get_emoji('Primogem')} for Mona's Minigame every 12 hours\nThanks for your support!"
 
         await ctx.send(embed=embed)

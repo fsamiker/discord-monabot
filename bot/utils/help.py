@@ -635,7 +635,7 @@ Kindly send command from a guild channel for times corrected to guild server's r
 GENSHIN_VOTE_MONA= '''
 Vote for Monabot on TopGG if you've enjoyed the bot
 
-200 minigame primogems will be given each time you vote as a thank you
+300 minigame primogems will be given each time you vote as a thank you
 Must have started adventure with `m!startadventure` to recieve primogems
 
 Voting available every 12 hours
