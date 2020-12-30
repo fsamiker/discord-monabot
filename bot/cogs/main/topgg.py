@@ -14,7 +14,7 @@ class Topgg(commands.Cog):
         self.voted = {}
         self.dbl_token = dbl_token
         self.dblpy = dbl.DBLClient(self.bot, self.dbl_token,
-         webhook_path='/dblwebhook', webhook_auth='t3ZEQQoQRXgnWmxWEP4R', webhook_port=5000,
+         webhook_path='/dbl', webhook_auth='password', webhook_port=5000,
          autopost=True)
 
     @commands.Cog.listener()
@@ -87,8 +87,8 @@ class Topgg(commands.Cog):
         async with AsyncSession(self.bot.get_cog('Query').engine) as s:
             voter = await s.run_sync(query_vote, discord_id=ctx.author.id)
             now=datetime.utcnow()
-            next_votetime = voter.timestamp+timedelta(hours=12)
-            if voter is not None and next_votetime < now:
+            if voter is not None and voter.timestamp+timedelta(hours=12) < now:
+                next_votetime = voter.timestamp+timedelta(hours=12)
                 time_delta = next_votetime-datetime.utcnow()
                 duration = self.get_duration(time_delta)
                 embed.description = f'You have already voted for Mona\nThanks for the Support!\n\n**Next vote available in: {duration}**'
