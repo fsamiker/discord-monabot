@@ -28,10 +28,11 @@ class Topgg(commands.Cog):
     @commands.Cog.listener()
     async def on_dbl_test(self, data):
         print(data)
+        print(data['user'])
 
     @commands.Cog.listener()
     async def on_dbl_vote(self, data):
-        discord_id = 123123
+        discord_id = data['user']
         async with AsyncSession(self.bot.get_cog('Query').engine) as s:
             voter = await s.run_sync(query_vote, discord_id=discord_id)
             if not voter:
