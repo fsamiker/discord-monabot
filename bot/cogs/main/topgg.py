@@ -14,7 +14,7 @@ class Topgg(commands.Cog):
         self.voted = {}
         self.dbl_token = dbl_token
         self.dblpy = dbl.DBLClient(self.bot, self.dbl_token,
-         webhook_path='/dbl', webhook_auth='password', webhook_port=5000,
+         webhook_path='/monadbl', webhook_auth='t3ZEQQoQRXgnWmxWEP4R', webhook_port=5000,
          autopost=True)
 
     @commands.Cog.listener()
