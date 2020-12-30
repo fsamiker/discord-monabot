@@ -14,7 +14,7 @@ class Core(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'{self.bot.user.name} has connected to Discord!')
-        await self.bot.change_presence(activity=discord.Game(name="Type m!help"))
+        await self.bot.change_presence(activity=discord.Game(name="m!help"))
 
     @commands.command()
     @commands.guild_only()

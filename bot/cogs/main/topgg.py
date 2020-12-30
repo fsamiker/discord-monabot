@@ -22,7 +22,7 @@ class Topgg(commands.Cog):
         print(f'Connecting to topgg server...')
 
     @commands.Cog.listener()
-    async def on_guild_post():
+    async def on_guild_post(self):
         print("Server count posted successfully")
 
     @commands.Cog.listener()
