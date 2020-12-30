@@ -20,7 +20,7 @@ class Game(commands.Cog):
     HP_MULTIPLIER = 750
     STAMINA_INCREMENT = 10
     REGEN_RATE = 3600  # Seconds
-    STAMINA_REGEN = 7
+    STAMINA_REGEN = 10
     HEALTH_REGEN = 50
     MAX_DMG_MULTIPLIER = 150
     CRIT_CHANCE = 18
