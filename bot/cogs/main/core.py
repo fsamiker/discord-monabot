@@ -3,7 +3,7 @@ from discord.ext.commands.cooldowns import BucketType
 from bot.utils.embeds import paginate_embed, send_temp_embed
 from discord.ext import commands
 from sqlalchemy.ext.asyncio import AsyncSession
-from bot.utils.help import GENSHIN_CANCEL_REMINDERS, GENSHIN_CHECKREMINDERS, GENSHIN_DATABASE_MD, GENSHIN_DB_ARTIFACT, GENSHIN_DB_CHAR, GENSHIN_DB_CHAR_ASC, GENSHIN_DB_DOMAIN, GENSHIN_DB_ENEMY, GENSHIN_DB_FOOD, GENSHIN_DB_MATERIAL, GENSHIN_DB_TAL, GENSHIN_DB_TAL_MAT, GENSHIN_DB_WEAPON, GENSHIN_DB_WEAPON_MAT, GENSHIN_DISCORD_MINIGAME, GENSHIN_GAME_ATTACK, GENSHIN_GAME_ATTACKABYSS, GENSHIN_GAME_CHECKABYSS, GENSHIN_GAME_CLAIM, GENSHIN_GAME_EXPLORE, GENSHIN_GAME_HEAL, GENSHIN_GAME_LEADERBOARDS, GENSHIN_GAME_MUG, GENSHIN_GAME_PRIMOLVLUP, GENSHIN_GAME_PROFILE, GENSHIN_GAME_START, GENSHIN_GAME_SWITCH, GENSHIN_GAME_WEATHER, GENSHIN_GAME_WISH, GENSHIN_GENERAL_MD, GENSHIN_GENERAL_MD_V2, GENSHIN_INVITE_MONA, GENSHIN_REMINDME, GENSHIN_RESIN_CHECK, GENSHIN_RESIN_SET, GENSHIN_RESIN_TIME, GENSHIN_SUPPORT, GENSHIN_UPDATE, GENSHIN_VOTE_MONA, REMINDERS_HELP, RESIN_STATUS
+from bot.utils.help import GENSHIN_CANCEL_REMINDERS, GENSHIN_CHECKREMINDERS, GENSHIN_DATABASE_MD, GENSHIN_DB_ARTIFACT, GENSHIN_DB_CHAR, GENSHIN_DB_CHAR_ASC, GENSHIN_DB_DOMAIN, GENSHIN_DB_ENEMY, GENSHIN_DB_FOOD, GENSHIN_DB_MATERIAL, GENSHIN_DB_TAL, GENSHIN_DB_TAL_MAT, GENSHIN_DB_WEAPON, GENSHIN_DB_WEAPON_MAT, GENSHIN_DISCORD_MINIGAME, GENSHIN_GAME_ATTACK, GENSHIN_GAME_ATTACKABYSS, GENSHIN_GAME_CHECKABYSS, GENSHIN_GAME_CLAIM, GENSHIN_GAME_EXPLORE, GENSHIN_GAME_HEAL, GENSHIN_GAME_LEADERBOARDS, GENSHIN_GAME_MUG, GENSHIN_GAME_PRIMOLVLUP, GENSHIN_GAME_PROFILE, GENSHIN_GAME_START, GENSHIN_GAME_SWITCH, GENSHIN_GAME_WEATHER, GENSHIN_GAME_WISH, GENSHIN_GENERAL_MD, GENSHIN_GENERAL_MD_V2, GENSHIN_INVITE_MONA, GENSHIN_REMINDME, GENSHIN_RESIN_CHECK, GENSHIN_RESIN_SET, GENSHIN_RESIN_SPEND, GENSHIN_RESIN_TIME, GENSHIN_SUPPORT, GENSHIN_UPDATE, GENSHIN_VOTE_MONA, REMINDERS_HELP, RESIN_STATUS
 import discord
 
 class Core(commands.Cog):
@@ -110,6 +110,7 @@ class Core(commands.Cog):
             embeds.append(self._help_dict['setresin'])
             embeds.append(self._help_dict['checkresin'])
             embeds.append(self._help_dict['timetoresin'])
+            embeds.append(self._help_dict['spendresin'])
             await paginate_embed(self.bot, ctx, embeds)
             return
         if category.lower() == 'genshin minigame':
@@ -176,7 +177,9 @@ class Core(commands.Cog):
             'updates': discord.Embed(title="Monabot - Update Log", description=GENSHIN_UPDATE, color=discord.Colour.purple()),
             'support': discord.Embed(title="Monabot - Support", description=GENSHIN_SUPPORT, color=discord.Colour.purple()),
             'invitemona': discord.Embed(title="Monabot - Invite", description=GENSHIN_INVITE_MONA, color=discord.Colour.purple()),
-            'vote': discord.Embed(title="Monabot - Vote", description=GENSHIN_VOTE_MONA, color=discord.Colour.green())
+            'vote': discord.Embed(title="Monabot - Vote", description=GENSHIN_VOTE_MONA, color=discord.Colour.green()),
+            'spendresin': discord.Embed(title="Resin Status - Spend Resin", description=GENSHIN_RESIN_SPEND, color=discord.Colour.blue())
+
         }
 
     def convert_from_utc(self, time, server_region):

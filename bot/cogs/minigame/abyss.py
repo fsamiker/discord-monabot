@@ -13,10 +13,10 @@ class Abyss(commands.Cog):
 
     ABYSS_INTERVAL = 345600  # seconds
     BOSS_DURATION = 259200  # seconds
-    WINNER_REWARD = 2500
-    WINNER_EXP = 500
-    CONSOLATION = 800
-    CONSOLATION_EXP = 250
+    WINNER_REWARD = 3200
+    WINNER_EXP = 1000
+    CONSOLATION = 1000
+    CONSOLATION_EXP = 500
     HP_MULTIPLIER = 150
 
     def __init__(self, bot):

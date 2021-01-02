@@ -13,7 +13,7 @@ Example: `m!character mona`
 `checkreminders` `cancelreminder`
 
 🌙 Resin Status:
-`setresin` `checkresin` `timetoresin`
+`setresin` `checkresin` `timetoresin` `spendresin`
 
 🕹️ Genshin Minigame:
 `startadventure` `leaderboard` `checkweather` `claimdaily` `profile`
@@ -50,15 +50,16 @@ use `m!help <command name>` for more details
 `checkreminders` `cancelreminder`
 
 🌙 Resin Status:
-`setresin` `checkresin` `timetoresin`
+`setresin` `checkresin` `timetoresin` `spendresin`
 
 🕹️ Genshin Minigame:
 `startadventure` `leaderboard` `checkweather` `claimdaily` `profile`
 `wish` `primolvlup` `switchactive` `checkabyss` `explore` `attack` `mug`
-`attackabyss`
+`attackabyss` `vote`
 
 **Misc:**
 ```
+vote                Support Mona if you've enjoyed the bot
 updates             Monabot update logs
 support             Support resource links
 invitemona          Share Monabot with your friends
@@ -157,6 +158,7 @@ Run `m!help resin status` or `m!help<command name>` for more details on each com
 setresin            Set current ingame resin value
 checkresin          Check current ingame resin value
 timetoresin         Check time to reach a resin value
+spendresin          Spend resin amount from resin value
 ```
 '''
 
@@ -403,6 +405,18 @@ Example Usage:
 ```
 m!timetoresin 120
 m!timetoresin 42
+```
+'''
+
+GENSHIN_RESIN_SPEND = '''
+Subtract resin value from current resin amount
+
+> m!spendresin <resin used>
+
+Example Usage:
+```
+m!spendresin 120
+m!spendresin 50
 ```
 '''
 
