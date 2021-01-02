@@ -114,7 +114,7 @@ wish                Make a wish!
 primolvlup          Spend 3000 primogems and lvlup!
 switchactive        Switch active character
 checkabyss          Check Discord Abyss
-vote                Support Mona if you've enjoyed the bot
+vote                Get 1000 primogems for supporting monabot
 ```
 **Stamina Actions:**
 Commands that cost stamina
@@ -431,7 +431,7 @@ m!checkweather
 '''
 
 GENSHIN_GAME_CLAIM  = '''
-Claim 300 primogems every 24 hours
+Claim 1000 primogems every 24 hours
 
 > m!claimdaily
 
@@ -635,7 +635,7 @@ Kindly send command from a guild channel for times corrected to guild server's r
 GENSHIN_VOTE_MONA= '''
 Vote for Monabot on TopGG if you've enjoyed the bot
 
-300 minigame primogems will be given each time you vote as a thank you
+1000 minigame primogems will be given each time you vote as a thank you
 Must have started adventure with `m!startadventure` to recieve primogems
 
 Voting available every 12 hours

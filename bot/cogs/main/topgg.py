@@ -52,9 +52,9 @@ class Topgg(commands.Cog):
         async with AsyncSession(self.bot.get_cog('Query').engine) as s:
             profile = await s.run_sync(query_gameprofile, discord_id=discord_id)
             if user is not None and profile:
-                profile.primogems += 300
+                profile.primogems += 1000
                 try:
-                    embed = discord.Embed(title='Thank You!', description=f'Thanks for the support!\n300 {self.bot.get_cog("Flair").get_emoji("Primogem")} added to minigame profile',
+                    embed = discord.Embed(title='Thank You!', description=f'Thanks for the support!\n1000 {self.bot.get_cog("Flair").get_emoji("Primogem")} added to minigame profile',
                     color=discord.Colour.purple())
                     await user.send(embed=embed)
                 except:
@@ -94,6 +94,6 @@ class Topgg(commands.Cog):
                 duration = self.get_duration(time_delta)
                 embed.description = f'You have already voted for Mona\nThanks for the Support!\n\n**Next vote available in: {duration}**'
             else:
-                embed.description = f"If you have enjoyed **Monabot**\nVote on [Topgg](https://top.gg/bot/781525788759031820/vote)\n\nRecieve 300 {self.bot.get_cog('Flair').get_emoji('Primogem')} for Mona's Minigame every 12 hours\nThanks for your support!"
+                embed.description = f"If you have enjoyed **Monabot**\nVote on [Topgg](https://top.gg/bot/781525788759031820/vote)\n\nRecieve 1000 {self.bot.get_cog('Flair').get_emoji('Primogem')} for Mona's Minigame every 12 hours\nThanks for your support!"
 
         await ctx.send(embed=embed)
