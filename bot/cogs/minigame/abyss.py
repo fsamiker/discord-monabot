@@ -171,7 +171,7 @@ class Abyss(commands.Cog):
     def calculate_boss_maxhp(self, total_lvls):
         if total_lvls is None:
             total_lvls = 5
-        lower_hp = int(total_lvls*self.HP_MULTIPLIER*0.5)
+        lower_hp = int(total_lvls*self.HP_MULTIPLIER*1)
         higher_hp = int(total_lvls*self.HP_MULTIPLIER*1.5)
         n = random.randint(lower_hp, higher_hp)
         return n

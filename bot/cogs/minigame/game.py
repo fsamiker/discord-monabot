@@ -120,6 +120,21 @@ class Game(commands.Cog):
 
     @commands.command()
     @commands.cooldown(5,1,BucketType.guild) 
+    async def adventureinfo(self, ctx):
+        title='How to Play'
+        desc="Can't get enough of genshin? Play a genshin minigame right on discord!\nStart your minigame profile with `m!startadventure`\n\nCompete with your friends climb to the top of your guild leaderboards as well as all of discord! `m!leaderboard` `m!leaderboard global`\n\nType `m!help genshin minigame` more full list of commands\n"
+        embed = discord.Embed(title=title, description=desc, color=discord.Colour.purple())
+        embed.add_field(name='Wish', value='Wish and get your favorite Teyvat heroes. Just like genshin, a character is guranteed every 10 pulls `m!wish`', inline=False)
+        embed.add_field(name='Explore', value='Explore discord Teyvat, you never know what you might encounter `m!explore`', inline=False)
+        embed.add_field(name='PVP', value='Attack your friends, slow them down, steal their primogems, be careful what enemies you make...\n`m!attack` `m!mug` `m!heal`', inline=False)
+        embed.add_field(name='Abyss', value='Band together as a guild, take down the abyss boss and claim the rewards! `m!checkabyss` `m!attackabyss`', inline=False)
+        embed.add_field(name='Weather', value='Look out for character boosts from the weather. Your active character benefits from damage boosts when attacking `m!checkweather`', inline=False)
+        embed.set_thumbnail(url=self.bot.user.avatar_url)
+        embed.set_footer(text='Happy Genshining!')
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    @commands.cooldown(5,1,BucketType.guild) 
     async def profile(self, ctx, member: discord.Member=None):
         """Check player profile"""
         if not member:

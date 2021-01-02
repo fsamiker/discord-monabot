@@ -16,7 +16,7 @@ Example: `m!character mona`
 `setresin` `checkresin` `timetoresin` `spendresin`
 
 🕹️ Genshin Minigame:
-`startadventure` `leaderboard` `checkweather` `claimdaily` `profile`
+`startadventure` `adventureinfo` `leaderboard` `checkweather` `claimdaily` `profile`
 `wish` `primolvlup` `switchactive` `checkabyss` `explore` `attack` `mug`
 `attackabyss` `vote`
 
@@ -53,7 +53,7 @@ use `m!help <command name>` for more details
 `setresin` `checkresin` `timetoresin` `spendresin`
 
 🕹️ Genshin Minigame:
-`startadventure` `leaderboard` `checkweather` `claimdaily` `profile`
+`startadventure` `adventureinfo` `leaderboard` `checkweather` `claimdaily` `profile`
 `wish` `primolvlup` `switchactive` `checkabyss` `explore` `attack` `mug`
 `attackabyss` `vote`
 
@@ -104,6 +104,7 @@ Run `m!help genshin minigame` or `m!help<command name>` for more details on each
 **Start Game:**
 ```
 startadventure      Start your minigame profile
+adventureinfo       How to Play
 ```
 **Misc Actions:**
 ```
@@ -659,5 +660,16 @@ Voting available every 12 hours
 Example Usage:
 ```
 m!vote
+```
+'''
+
+GENSHIN_ADVENTURE_INFO= '''
+How to play the minigame
+
+> m!adventureinfo
+
+Example Usage:
+```
+m!adventureinfo
 ```
 '''

@@ -3,7 +3,7 @@ from discord.ext.commands.cooldowns import BucketType
 from bot.utils.embeds import paginate_embed, send_temp_embed
 from discord.ext import commands
 from sqlalchemy.ext.asyncio import AsyncSession
-from bot.utils.help import GENSHIN_CANCEL_REMINDERS, GENSHIN_CHECKREMINDERS, GENSHIN_DATABASE_MD, GENSHIN_DB_ARTIFACT, GENSHIN_DB_CHAR, GENSHIN_DB_CHAR_ASC, GENSHIN_DB_DOMAIN, GENSHIN_DB_ENEMY, GENSHIN_DB_FOOD, GENSHIN_DB_MATERIAL, GENSHIN_DB_TAL, GENSHIN_DB_TAL_MAT, GENSHIN_DB_WEAPON, GENSHIN_DB_WEAPON_MAT, GENSHIN_DISCORD_MINIGAME, GENSHIN_GAME_ATTACK, GENSHIN_GAME_ATTACKABYSS, GENSHIN_GAME_CHECKABYSS, GENSHIN_GAME_CLAIM, GENSHIN_GAME_EXPLORE, GENSHIN_GAME_HEAL, GENSHIN_GAME_LEADERBOARDS, GENSHIN_GAME_MUG, GENSHIN_GAME_PRIMOLVLUP, GENSHIN_GAME_PROFILE, GENSHIN_GAME_START, GENSHIN_GAME_SWITCH, GENSHIN_GAME_WEATHER, GENSHIN_GAME_WISH, GENSHIN_GENERAL_MD, GENSHIN_GENERAL_MD_V2, GENSHIN_INVITE_MONA, GENSHIN_REMINDME, GENSHIN_RESIN_CHECK, GENSHIN_RESIN_SET, GENSHIN_RESIN_SPEND, GENSHIN_RESIN_TIME, GENSHIN_SUPPORT, GENSHIN_UPDATE, GENSHIN_VOTE_MONA, REMINDERS_HELP, RESIN_STATUS
+from bot.utils.help import GENSHIN_ADVENTURE_INFO, GENSHIN_CANCEL_REMINDERS, GENSHIN_CHECKREMINDERS, GENSHIN_DATABASE_MD, GENSHIN_DB_ARTIFACT, GENSHIN_DB_CHAR, GENSHIN_DB_CHAR_ASC, GENSHIN_DB_DOMAIN, GENSHIN_DB_ENEMY, GENSHIN_DB_FOOD, GENSHIN_DB_MATERIAL, GENSHIN_DB_TAL, GENSHIN_DB_TAL_MAT, GENSHIN_DB_WEAPON, GENSHIN_DB_WEAPON_MAT, GENSHIN_DISCORD_MINIGAME, GENSHIN_GAME_ATTACK, GENSHIN_GAME_ATTACKABYSS, GENSHIN_GAME_CHECKABYSS, GENSHIN_GAME_CLAIM, GENSHIN_GAME_EXPLORE, GENSHIN_GAME_HEAL, GENSHIN_GAME_LEADERBOARDS, GENSHIN_GAME_MUG, GENSHIN_GAME_PRIMOLVLUP, GENSHIN_GAME_PROFILE, GENSHIN_GAME_START, GENSHIN_GAME_SWITCH, GENSHIN_GAME_WEATHER, GENSHIN_GAME_WISH, GENSHIN_GENERAL_MD, GENSHIN_GENERAL_MD_V2, GENSHIN_INVITE_MONA, GENSHIN_REMINDME, GENSHIN_RESIN_CHECK, GENSHIN_RESIN_SET, GENSHIN_RESIN_SPEND, GENSHIN_RESIN_TIME, GENSHIN_SUPPORT, GENSHIN_UPDATE, GENSHIN_VOTE_MONA, REMINDERS_HELP, RESIN_STATUS
 import discord
 
 class Core(commands.Cog):
@@ -117,6 +117,7 @@ class Core(commands.Cog):
             embeds = []
             embeds.append(discord.Embed(title="Geshin Minigame - Commands", description=GENSHIN_DISCORD_MINIGAME, color=discord.Colour.green()))
             embeds.append(self._help_dict['startadventure'])
+            embeds.append(self._help_dict['adventureinfo'])
             embeds.append(self._help_dict['vote'])
             embeds.append(self._help_dict['leaderboard'])
             embeds.append(self._help_dict['claimdaily'])
@@ -173,6 +174,7 @@ class Core(commands.Cog):
             'timetoresin': discord.Embed(title="Resin Status - Time To Resin", description=GENSHIN_RESIN_TIME, color=discord.Colour.blue()),
             'checkabyss': discord.Embed(title="Geshin Minigame - Check Abyss", description=GENSHIN_GAME_CHECKABYSS, color=discord.Colour.blue()),
             'attackabyss': discord.Embed(title="Geshin Minigame - Attack Abyss", description=GENSHIN_GAME_ATTACKABYSS, color=discord.Colour.green()),
+            'adventureinfo': discord.Embed(title="Geshin Minigame - How To Play", description=GENSHIN_ADVENTURE_INFO, color=discord.Colour.green()),
             'leaderboard': discord.Embed(title="Geshin Minigame - Leaderboard", description=GENSHIN_GAME_LEADERBOARDS, color=discord.Colour.green()),
             'updates': discord.Embed(title="Monabot - Update Log", description=GENSHIN_UPDATE, color=discord.Colour.purple()),
             'support': discord.Embed(title="Monabot - Support", description=GENSHIN_SUPPORT, color=discord.Colour.purple()),
