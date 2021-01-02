@@ -140,6 +140,71 @@ class Resin(commands.Cog):
 
     @commands.command()
     @commands.max_concurrency(5, BucketType.guild, wait=True)
+    async def spendresin(self, ctx, resin):
+        """Spend resin from pool"""
+
+        # Verify resin value
+        self.verify_resin(resin)
+
+        message = ''
+        if ctx.guild:
+            server_region = ctx.guild.region.name
+        else:
+            server_region = 'GMT'
+        resin = int(resin)
+        if resin >= 160:
+            raise UserInputError
+
+        # Prepare embded
+        flair = self.bot.get_cog("Flair")
+        embed = discord.Embed(title=f"{ctx.author.display_name.capitalize()}'s Resin",
+        color=discord.Colour.dark_blue())
+        desc = ''
+
+        async with AsyncSession(self.bot.get_cog('Query').engine) as s:
+            # check for existing resin
+            r = await s.run_sync(query_resin, discord_id=ctx.author.id)
+            if not r:
+                embed.description = 'No Record'
+                if isinstance(ctx.channel, discord.channel.DMChannel):
+                    embed.description += TIMEZONE_NOTICE
+                embed.set_footer(text=f'Run `m!setresin` to record resin')
+            else:
+                current_resin = self.get_current_resin(r.timestamp, r.resin)
+                if resin > current_resin:
+                    raise UserInputError
+                new_resin = int(current_resin-resin)
+                now = r.timestamp+int(current_resin-r.resin)*timedelta(minutes=8)
+                max_resin_time = self.get_max_resin_time(now, new_resin)
+                display_time = self.convert_from_utc(max_resin_time, server_region).strftime("%I:%M %p, %d %b %Y")
+                embed.set_footer(text=f'Max Resin At: {display_time}\n{server_region.capitalize()} timezone')
+                r.resin = new_resin
+                r.timestamp = now
+                # check for existing reminder
+                reminder = await s.run_sync(query_reminder_by_typing, discord_id=ctx.author.id, typing='Resin%')
+                if reminder:
+                    target_resin = int(reminder.value)
+                    resin_target_time = self.get_resin_time(now, new_resin, target_resin)
+                    target_display_time = self.convert_from_utc(resin_target_time, server_region).strftime("%I:%M %p, %d %b %Y")
+                    reminder.when=resin_target_time
+                    reminder.timezone=server_region
+                    reminder.channel=str(ctx.channel.id)
+                    r_msg = f"\n{flair.get_emoji('Reminder')} Resin {target_resin} adjusted to {target_display_time}"
+                    embed.add_field(name= f'{flair.get_emoji("Resin")} {current_resin} -> {new_resin}', value=r_msg)
+                else:
+                    embed.add_field(name= f'{flair.get_emoji("Resin")} {current_resin} -> {new_resin}', value=f"\n{flair.get_emoji('Reminder')} Not Enabled")
+            await s.commit()
+            
+        embed.description = desc.strip()
+
+        await self.bot.get_cog('Reminders')._get_next_reminder()
+        
+        if isinstance(ctx.channel, discord.channel.DMChannel):
+            embed.description = TIMEZONE_NOTICE
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    @commands.max_concurrency(5, BucketType.guild, wait=True)
     async def timetoresin(self, ctx, resin_value:int, member:discord.Member=None):
         """Get time of particular resin value"""
 
