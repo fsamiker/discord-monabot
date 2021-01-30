@@ -32,7 +32,7 @@ class Leaderboards(commands.Cog):
                     embed = await self.build_leader_embed(title, users)
                     await ctx.send(embed=embed)
         elif option.lower() == 'guild':
-            await send_game_embed_misc("Command Disabled", "Command is currently disabled for the time being for bug fix")
+            await send_game_embed_misc(ctx, "Command Disabled", "Command is currently disabled for the time being for bug fix")
             return
             title = f'Leaderboard - Guild ({ctx.guild.name})'
             async with AsyncSession(self.bot.get_cog('Query').engine) as s:
