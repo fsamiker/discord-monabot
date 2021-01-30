@@ -47,10 +47,7 @@ consoleHandler.setFormatter(logFormatter)
 rootLogger.addHandler(consoleHandler)
 
 # Initiate bot
-intents = discord.Intents.default()
-intents.members = True
-intents.guilds=True
-bot = commands.Bot(command_prefix='m!', intents=intents, help_command=None)
+bot = commands.Bot(command_prefix='m!', help_command=None)
 
 # Add cog modules
 bot.add_cog(CoreCog(bot))
