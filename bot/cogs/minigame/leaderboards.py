@@ -1,3 +1,4 @@
+from bot.utils.users import retrieve_user
 from discord.ext.commands.errors import UserInputError
 from bot.utils.embeds import send_game_embed_misc
 from bot.utils.queries.minigame_queries import query_top_ten_players, query_top_ten_players_in_guild
@@ -15,7 +16,7 @@ class Leaderboards(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def leaderboard(self, ctx, option:str='guild'):
+    async def leaderboard(self, ctx, option:str='global'):
         """Check genshin minigame leaderboards"""
 
         if option.lower() not in ['global', 'guild']:
@@ -28,9 +29,11 @@ class Leaderboards(commands.Cog):
                 if not users:
                     await send_game_embed_misc(ctx, title, f"There doesn't seem to be any players")
                 else:
-                    embed = self.build_leader_embed(title, users)
+                    embed = await self.build_leader_embed(title, users)
                     await ctx.send(embed=embed)
         elif option.lower() == 'guild':
+            await send_game_embed_misc("Command Disabled", "Command is currently disabled for the time being for bug fix")
+            return
             title = f'Leaderboard - Guild ({ctx.guild.name})'
             async with AsyncSession(self.bot.get_cog('Query').engine) as s:
                 guild_members = [m.id for m in ctx.guild.members]
@@ -38,16 +41,16 @@ class Leaderboards(commands.Cog):
                 if not users:
                     await send_game_embed_misc(ctx, title, f"There doesn't seem to be any players")
                 else:
-                    embed = self.build_leader_embed(title, users)
+                    embed = await self.build_leader_embed(title, users)
                     await ctx.send(embed=embed)
 
 
-    def build_leader_embed(self, title, users):
+    async def build_leader_embed(self, title, users):
         embed = discord.Embed(title=title, color=discord.Colour.purple())
         desc = ''
         i = 1
         for p in users:
-            user = self.bot.get_user(p.discord_id)
+            user = await retrieve_user(self.bot, p.discord_id)
             if user is None:
                 continue
             desc += f'`{i:02}.`: {self.bot.get_cog("Flair").get_emoji("AR")}{p.level} - **{user.display_name}**\n'

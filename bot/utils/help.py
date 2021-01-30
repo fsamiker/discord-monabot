@@ -570,7 +570,7 @@ Attempt to slay any bosses that dares disrupt discord
 \u2022 Abyss resets every 4 days
 \u2022 Bosses spawned only last for 3 days
 
-Team up with you friends and try to defeat the boss.\n\u2022 The player that deals the killing blow will grant participants of their guild the winners pot!\n\u2022 Every other player that participated in taking down the boss will earn the consolation prize.
+Team up with you friends and try to defeat the boss.\n\u2022 The player that deals the killing blow will be granted the winners pot!\n\u2022 Every other player that participated in taking down the boss will earn the consolation prize.
 
 > m!checkabyss
 

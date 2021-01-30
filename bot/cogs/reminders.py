@@ -1,3 +1,4 @@
+from bot.utils.users import retrieve_user
 from bot.utils.help import TIMEZONE_NOTICE
 from discord.ext.commands.errors import UserInputError
 from bot.utils.queries.resin_queries import query_resin
@@ -34,7 +35,7 @@ class Reminders(commands.Cog):
         while self._enable_reminders:
             now = datetime.utcnow()
             if self._next_reminder is not None and self._next_reminder.get('when') < now:
-                user = self.bot.get_user(self._next_reminder.get('discord_id'))
+                user = await retrieve_user(self.bot, self._next_reminder.get('discord_id'))
                 if user is not None:
                     try:
                         await user.send(self._next_reminder.get('message'))

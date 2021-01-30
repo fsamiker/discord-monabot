@@ -1,3 +1,4 @@
+from bot.utils.users import retrieve_user
 from bot.utils.queries.minigame_queries import query_gameprofile
 from data.monabot.models import Vote
 from bot.utils.queries.vote_queries import query_vote
@@ -48,7 +49,7 @@ class Topgg(commands.Cog):
         print(f'New vote: {data}')
 
     async def reward_vote(self, discord_id):
-        user = self.bot.get_user(discord_id)
+        user = await retrieve_user(self.bot, discord_id)
         async with AsyncSession(self.bot.get_cog('Query').engine) as s:
             profile = await s.run_sync(query_gameprofile, discord_id=discord_id)
             if user is not None and profile:

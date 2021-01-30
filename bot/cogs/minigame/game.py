@@ -675,9 +675,11 @@ class Game(commands.Cog):
             return user
         # check stamina
         if user.last_check+timedelta(seconds=self.REGEN_RATE) <= now:
-            stamina_gain = int(((now-user.last_check).seconds/self.REGEN_RATE*self.STAMINA_REGEN)+user.level)
+            time_diff = now-user.last_check
+            total_seconds = time_diff.days*86400+time_diff.seconds
+            stamina_gain = int((total_seconds/self.REGEN_RATE*self.STAMINA_REGEN)+user.level)
             user.stamina += stamina_gain
-            health_gain = int((now-user.last_check).seconds/self.REGEN_RATE*self.HEALTH_REGEN*user.level)
+            health_gain = int(total_seconds/self.REGEN_RATE*self.HEALTH_REGEN*user.level)
             user.health += health_gain
             if user.stamina >= user.max_stamina:
                 user.stamina = user.max_stamina
@@ -729,7 +731,7 @@ class Game(commands.Cog):
                 element=c.character.element
                 constellation = c.constellation
                 break
-        constellation_bonus = (1-constellation)*0.3
+        constellation_bonus = (constellation-1)*0.3
         if element.lower() == self._todays_weather.lower():
             return self.WEATHER_MULTIPLIER+constellation_bonus
         else:

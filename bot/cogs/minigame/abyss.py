@@ -15,7 +15,7 @@ class Abyss(commands.Cog):
     BOSS_DURATION = 259200  # seconds
     WINNER_REWARD = 3200
     WINNER_EXP = 1000
-    CONSOLATION = 1000
+    CONSOLATION = 2000
     CONSOLATION_EXP = 500
     HP_MULTIPLIER = 150
 
@@ -66,7 +66,7 @@ class Abyss(commands.Cog):
         now = datetime.now()
         flair = self.bot.get_cog("Flair")
 
-        info_msg = 'Team up with you friends and try to defeat the boss.\n\u2022 The player that deals the killing blow will grant participants of their guild the winners pot!\n\u2022 Every other player that participated in taking down the boss will earn the consolation prize.'
+        info_msg = 'Team up with you friends and try to defeat the boss.\n\u2022 The player that deals the killing blow will be granted the winners pot!\n\u2022 Every other player that participated in taking down the boss will earn the consolation prize.'
 
         if self._boss["hp"] > 0 and self._boss["end"] > now:
             title = f'{self._boss["name"]} is terrorizing discord!'
@@ -150,7 +150,7 @@ class Abyss(commands.Cog):
                     'when': datetime.utcnow()
                 }
                 msg += f'\n\nYou have slain {self._boss["name"]}!\nGuild **{ctx.guild.name}** claims the spoils!'
-                winning_members = [m.id for m in ctx.guild.members]
+                winning_members = [ctx.author.id]
                 await self.reward_boss_kill(s, winning_members)
             user = game_cog.check_user_status(user)
             await send_action_embed(ctx, title, msg.strip(), footer, color)
