@@ -6,6 +6,7 @@ from sqlalchemy.sql import select
 from sqlalchemy.orm import selectinload
 import discord
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import func
 
 def query_character(session, name):
     stmt = select(Character).\
@@ -14,7 +15,7 @@ def query_character(session, name):
             selectinload(Character.talents),
              selectinload(Character.levels),
               selectinload(Character.constellations)).\
-                  filter_by(name=name)
+                  filter(func.lower(Character.name) == func.lower(name))
     char = session.execute(stmt).scalars().first()
     return char
 
