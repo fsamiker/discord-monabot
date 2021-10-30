@@ -1,7 +1,6 @@
-from enum import unique
+from data import Base
 from sqlalchemy.sql.sqltypes import BigInteger, Boolean, DateTime
-from data.db import Base
-from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy import Column, Integer, String
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.orm import relationship
 
@@ -14,6 +13,7 @@ class Reminder(Base):
     message = Column(String)
     typing = Column(String)
     timezone = Column(String)
+    value = Column(String)
 
     def to_dict(self):
         return {
@@ -44,6 +44,21 @@ class Update(Base):
 
     def update_list(self):
         return self.update_str.split(',')
+
+    def get_changes(self):
+        update_lst = self.update_str.split('###')
+        i = 0
+        updates = {}
+        while i < len(update_lst):
+            updates[update_lst[i]] = update_lst[i+1]
+            i += 2
+        return updates
+
+class Vote(Base):
+    __tablename__ = 'votes'
+    id = Column(Integer, primary_key=True)
+    discord_id = Column(BigInteger, unique=True)
+    timestamp = Column(DateTime)
 
 class GameProfile(Base):
     __tablename__ = 'gameprofiles'

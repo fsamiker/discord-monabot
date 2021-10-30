@@ -1,7 +1,75 @@
+GENSHIN_GENERAL_MD = '''
+There are currently **4 main categories** of commands.
+
+To user commands, prefix with `m!`
+Example: `m!character mona`
+
+💽 Genshin Database:
+`character` `ascensionmaterial` `talent` `talentmaterial` `material` 
+`food` `weapon` `weaponmaterial` `artifact` `domain` `enemy`
+
+⏰ Reminders:
+`remindme resin` `remindme specialty` `remindme artifact`
+`checkreminders` `cancelreminder`
+
+🌙 Resin Status:
+`setresin` `checkresin` `timetoresin` `spendresin`
+
+🕹️ Genshin Minigame:
+`startadventure` `adventureinfo` `leaderboard` `checkweather` `claimdaily` `profile`
+`wish` `primolvlup` `switchactive` `checkabyss` `explore` `attack` `mug`
+`attackabyss` `vote`
+
+**Misc:**
+```
+vote                Support Mona if you've enjoyed the bot
+updates             Monabot update logs
+support             Support resource links
+invitemona          Share Monabot with your friends
+```
+'''
+
+GENSHIN_GENERAL_MD_V2 = '''
+```diff
+- You are currently viewing a shortened version of `help` as a permission seems to be missing for Mona
+- Kindly enable *Manage Message* permission to enable a richer help interface
+```
+
+To user commands, prefix with `m!`
+Example: `m!character mona`
+
+There are currently **4 main categories** of commands.
+use `m!help <command name>` for more details
+
+💽 Genshin Database:
+`character` `ascensionmaterial` `talent` `talentmaterial` `material` 
+`food` `weapon` `weaponmaterial` `artifact` `domain` `enemy`
+
+⏰ Reminders:
+`remindme resin` `remindme specialty` `remindme artifact`
+`checkreminders` `cancelreminder`
+
+🌙 Resin Status:
+`setresin` `checkresin` `timetoresin` `spendresin`
+
+🕹️ Genshin Minigame:
+`startadventure` `adventureinfo` `leaderboard` `checkweather` `claimdaily` `profile`
+`wish` `primolvlup` `switchactive` `checkabyss` `explore` `attack` `mug`
+`attackabyss` `vote`
+
+**Misc:**
+```
+vote                Support Mona if you've enjoyed the bot
+updates             Monabot update logs
+support             Support resource links
+invitemona          Share Monabot with your friends
+```
+'''
+
 GENSHIN_DATABASE_MD = '''
 Access curated details on all things genshin from [Genshin Wiki](https://genshin-impact.fandom.com/wiki/Genshin_Impact_Wiki)
 
-Run `m!help` genshin database or `m!<command name>` for more details on each command
+Run `m!help` genshin database or `m!help<command name>` for more details on each command
 
 **Character:**
 ```
@@ -31,28 +99,33 @@ enemy               Get enemy/boss details
 GENSHIN_DISCORD_MINIGAME = '''
 Genshin minigame right on discord!
 
-Run `m!help genshin minigame` or `m!<command name>` for more details on each command
+Run `m!help genshin minigame` or `m!help<command name>` for more details on each command
 
 **Start Game:**
 ```
 startadventure      Start your minigame profile
+adventureinfo       How to Play
 ```
 **Misc Actions:**
 ```
+leaderboard         Check game leaderboard
 checkweather        Check daily ingame weather
 claimdaily          Claim daily primogems
 profile             Check game profile
 wish                Make a wish!
 primolvlup          Spend 3000 primogems and lvlup!
 switchactive        Switch active character
+checkabyss          Check Discord Abyss
+vote                Get 1000 primogems for supporting monabot
 ```
 **Stamina Actions:**
 Commands that cost stamina
 ```
-explore (10)        You never know what you might find
-heal    (10)        Heal yourself
-attack  (15)        Attack a player!
-mug     (15)        Attempt to steal primogems
+explore     (10)    You never know what you might find
+heal        (10)    Heal yourself
+attack      (15)    Attack a player!
+mug         (15)    Attempt to steal primogems
+attackabyss (15)    Attack the abyss boss
 ```
 '''
 
@@ -60,7 +133,7 @@ REMINDERS_HELP = '''
 Set reminders for genshin related activities.
 Never lose out on resin
 
-Run `m!help reminders` for or `m!<command name>` more details on each command
+Run `m!help reminders` for or `m!help<command name>` more details on each command
 
 **Reminders:**
 ```
@@ -79,13 +152,14 @@ cancelreminder      Cancel an active reminder
 RESIN_STATUS = '''
 Check the state of your resin in genshin
 
-Run `m!help resin status` or `m!<command name>` for more details on each command
+Run `m!help resin status` or `m!help<command name>` for more details on each command
 
 **Commands:**
 ```
 setresin            Set current ingame resin value
 checkresin          Check current ingame resin value
 timetoresin         Check time to reach a resin value
+spendresin          Spend resin amount from resin value
 ```
 '''
 
@@ -250,17 +324,24 @@ Set reminders. Mona will dm you when its time!
 
 > m!remindme <option> <values>
 ```
-Options: \u2022 resin - Max Resin reminder. Value = current resin value
-         \u2022 specialty - Local Specialty reminder
-         \u2022 mineral - Mineral Mining reminder
-         \u2022 artifact - Artifact Run reminder
+Options: 
+\u2022 resin - Max Resin reminder. Value = current resin value, target value (default: 160)
+\u2022 specialty - Local Specialty reminder
+\u2022 mineral - Mineral Mining reminder
+\u2022 artifact - Artifact Run reminder
+\u2022 wei - Unusual Hilichurl respawn reminder
+\u2022 custom - Custom Reminder (Max 3 per user) Value = duration (Max 60 days), message
 ```
 Example Usage:
 ```
 m!remindme resin 50
+m!remindme resin 50 120
 m!remindme specialty
 m!remindme mineral
 m!remindme artifact
+m!remindme wei
+m!remindme custom 5d5hr5min5sec take a shower
+m!remindme custom 30d wish mona happy birthday
 ```
 '''
 
@@ -274,7 +355,7 @@ m!checkreminders
 ```
 '''
 
-GENSHIN_CANCELKREMINDERS = '''
+GENSHIN_CANCEL_REMINDERS = '''
 Cancel an active reminder.
 Run m!checkreminders to get reminder id.
 
@@ -292,12 +373,16 @@ Set current genshin ingame resin value. Mona will track your resin replenishment
 Note: This does not set a reminder. Reminder has to be enabled separately.
 However if reminder is already active, reminder will automatically be readjusted
 
-> m!setresin <current resin>
+> m!setresin <current resin> optional: <time left to next resin>
+
+timeleft: Time remaining to next resin. Allows for a more accurate adjustment of resin time (default: 8min)
 
 Example Usage:
 ```
 m!setresin 120
-m!setresin 69
+m!setresin 69 3min
+m!setresin 42 5min50sec
+m!setresin 88 50sec
 ```
 '''
 
@@ -321,6 +406,18 @@ Example Usage:
 ```
 m!timetoresin 120
 m!timetoresin 42
+```
+'''
+
+GENSHIN_RESIN_SPEND = '''
+Subtract resin value from current resin amount
+
+> m!spendresin <resin used>
+
+Example Usage:
+```
+m!spendresin 120
+m!spendresin 50
 ```
 '''
 
@@ -349,7 +446,7 @@ m!checkweather
 '''
 
 GENSHIN_GAME_CLAIM  = '''
-Claim 300 primogems every 24 hours
+Claim 1000 primogems every 24 hours
 
 > m!claimdaily
 
@@ -374,7 +471,7 @@ m!profile @Mona
 
 GENSHIN_GAME_SWITCH = '''
 Switch your active character with your bench characters if you have any.
-Active characters affect actions ingame
+Active characters affect actions ingame and helps you take advantage of the weather
 
 > m!switchactive <target character>
 
@@ -389,12 +486,12 @@ GENSHIN_GAME_WISH = '''
 You know the drill! Make a wish! 
 
 > m!wish optional: <times to wish>
+Note: Max 10 times at a time
 
 Example Usage:
 ```
 m!wish
 m!wish 10
-m!wish 420
 ```
 '''
 
@@ -410,13 +507,17 @@ m!primolvlup
 '''
 
 GENSHIN_GAME_EXPLORE = '''
-Explore the corners of digital tevyat and see what you find 
+Explore the corners of digital teyvat and see what you find
 
-> m!explore
+Stamina cost: 10
+
+> m!explore optional: <number of times>
+Note: Max 10 times at a time
 
 Example Usage:
 ```
 m!explore
+m!explore 10
 ```
 '''
 
@@ -437,6 +538,8 @@ GENSHIN_GAME_HEAL = '''
 Keep yourself healthy, heal yourself
 Chance to fully heal
 
+Stamina cost: 10
+
 > m!heal
 
 Example Usage:
@@ -449,11 +552,124 @@ GENSHIN_GAME_MUG = '''
 Attempt to steal some primogems from a player
 Bare your own consequences
 
+Stamina cost: 15
+
 > m!mug <Target User>
 
 Example Usage:
 ```
 m!mug @Someone
 m!mug @Mona
+```
+'''
+
+GENSHIN_GAME_CHECKABYSS = '''
+Check what lurks in the abyss.
+Attempt to slay any bosses that dares disrupt discord
+
+\u2022 Abyss resets every 4 days
+\u2022 Bosses spawned only last for 3 days
+
+Team up with you friends and try to defeat the boss.\n\u2022 The player that deals the killing blow will be granted the winners pot!\n\u2022 Every other player that participated in taking down the boss will earn the consolation prize.
+
+> m!checkabyss
+
+Example Usage:
+```
+m!checkabyss
+```
+'''
+
+GENSHIN_GAME_ATTACKABYSS = '''
+Charge into the abyss and contribute to taking down the boss that lurks
+
+Stamina cost: 15
+
+> m!attackabyss
+
+Example Usage:
+```
+m!attackabyss
+```
+'''
+
+GENSHIN_GAME_LEADERBOARDS= '''
+Check the leaderboards in your guild or all across discord
+Options:
+\u2022 global
+\u2022 guild (default)
+
+> m!leaderboard optional:<option>
+
+Example Usage:
+```
+m!leaderboard
+m!leaderboard global
+```
+'''
+
+GENSHIN_UPDATE= '''
+Check latest update logs
+Mona will bring up the latest 3 updates
+
+> m!updates
+
+Example Usage:
+```
+m!updates
+```
+'''
+
+GENSHIN_SUPPORT= '''
+Monabot support resource links
+
+> m!support
+
+Example Usage:
+```
+m!support
+```
+'''
+
+GENSHIN_INVITE_MONA= '''
+Get Monabot invite link with recommended permissions
+
+> m!invitemona
+
+Example Usage:
+```
+m!invitemona
+```
+'''
+
+TIMEZONE_NOTICE = '''
+```fix
+[NOTICE: Discord DM channels do not support timezones. Times seen are defaulted to GMT.
+Kindly send command from a guild channel for times corrected to guild server's region]
+```'''
+GENSHIN_VOTE_MONA= '''
+Vote for Monabot on TopGG if you've enjoyed the bot
+
+1000 minigame primogems will be given each time you vote as a thank you
+Must have started adventure with `m!startadventure` to recieve primogems
+
+Voting available every 12 hours
+
+> m!vote
+
+Example Usage:
+```
+m!vote
+```
+'''
+
+GENSHIN_ADVENTURE_INFO= '''
+How to play the minigame
+
+> m!adventureinfo
+
+Example Usage:
+```
+m!adventureinfo
 ```
 '''

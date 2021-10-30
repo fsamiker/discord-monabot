@@ -1,6 +1,6 @@
+from data import Base
 from sqlalchemy.util.langhelpers import hybridproperty
-from data.db import Base
-from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy import Column, Integer, String
 from sqlalchemy.sql.schema import ForeignKey, Table
 from sqlalchemy.orm import relationship
 
